@@ -1,0 +1,59 @@
+{% extends "admin/admin_dsh.html" %}
+{% block main %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Order Detail - Order ID: {{ order.id }}</h5>
+
+                    <p>Order Date: {{ orders.created }}</p>
+                    <p>Total Amount: ₹{{ orders.total_paid }}</p>
+
+                    <h6 class="mt-4">Customer Information:</h6>
+                    <p>Customer Name: {{ orders.full_name }}</p>
+                    <p>payment Method: {{ orders.billing_status }}</p>
+                    <!-- Add other customer information as needed -->
+
+                    <h6 class="mt-4">Order Items:</h6>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Photo</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in orders.items.all %}
+                                <tr>
+                                    <td>{{ item.product.title }}</td>
+                                    <td>
+                                        <img src="{{ item.product.image1.url }}" alt="{{ item.product.name }}" style="max-width: 50px; max-height: 50px;">
+                                    </td>
+                                    <td>₹{{ item.product.price }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <p>Status: <span class="{% if order.status == 'canceled' %}text-danger{% endif %}">{{ orders.get_status_display }}</span></p>
+
+                    {% if orders.status == 'confirmed' %}
+                        <form method="post" action="{% url 'payment:cancel_order' orders.id %}">
+                            {% csrf_token %}
+                            <input type="submit" id="cancel-order" onclick="return confirm('Do you want to cancel this order?');" value="Reject Order" class="btn btn-danger">
+                        </form>
+                    {% elif order.status == 'canceled' %}
+                        <p class="text-danger">This order has been canceled.</p>
+                    {% endif %} 
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "admin/admin_dsh.html" %}
+{% block main %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Order History</h5>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order Id</th>
+                                <th>Customers</th>
+                                <th>Order Status</th>
+                                <th>Date</th>
+                                <th>Payment Status</th>
+                                <th>Total Amount</th>
+                                <th>View</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}   
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.full_name }}</td>
+                                    <td>
+                                        <form action="{% url 'order' %}" method="post">
+                                            {% csrf_token %}
+                                            <select name="status" id="status_{{ order.id }}"  >
+                                                {% for status, _ in order.ORDER_STATUS_CHOICES %}
+                                                    <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <input type="hidden" name="orderId" value="{{ order.id }}">
+                                            <button type="submit">Update Status</button>
+                                        </form>
+                                    </td>
+                                    
+                                    <td>{{ order.created }}</td>
+                                    
+                                    <td>{{ order.billing_status }}</td>
+                                    <td>₹{{ order.total_paid }}</td>
+                                    <td><a class="btn btn-Primary" href="{% url 'order_details' order.id %}">View</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<!-- <script>
+    // Load the saved order status from local storage on page load
+    $(document).ready(function () {
+        {% for order in orders %}
+            var savedStatus_{{ order.id }} = localStorage.getItem('orderStatus_{{ order.id }}');
+            if (savedStatus_{{ order.id }}) {
+                $('#status_{{ order.id }}').val(savedStatus_{{ order.id }});
+            }
+        {% endfor %}
+    });
+
+    function updateStatus(orderId, selectedStatus) {
+        // Add your logic here to handle the selected status value
+        console.log("Order ID:", orderId);
+        console.log("Selected Status:", selectedStatus);
+
+        // Save the selected status to local storage
+        localStorage.setItem('orderStatus_' + orderId, selectedStatus);
+
+        // Make an AJAX request to update the order status on the server
+        $.ajax({
+            url: '/update-order-status/',  // Update this URL with your actual endpoint
+            method: 'POST',
+            data: { orderId: orderId, status: selectedStatus },
+            success: function(response) {
+                console.log(response);
+            },
+            error: function(error) {
+                console.error(error);
+            }
+        });
+    }
+</script> -->
+
+{% endblock %}

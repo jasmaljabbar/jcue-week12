@@ -1,0 +1,45 @@
+<!-- orders/templates/orders/order_list.html -->
+{% extends "app/base.html" %}
+{% load static %}
+
+{% block title %}
+    Order History
+{% endblock title %} 
+
+{% block main-content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Order History</h5>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order Number</th>
+                                <th>Date</th>
+                                <th>Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if orders %}
+                                {% for order in orders %}
+                                    <tr>
+                                        <td><a href="{% url 'payment:order_detail' order.id %}">{{ forloop.counter }}</a></td>
+                                        <td>{{ order.created }}</td>
+                                        <td>₹{{ order.total_paid }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4">No orders yet.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
