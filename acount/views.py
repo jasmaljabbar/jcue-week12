@@ -1,11 +1,15 @@
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from acount.models import User_profile
+from basket import basket
+
 from orders.models import Order
 from .utils import send_otp
 import pyotp
+
 from decimal import Decimal
 from django.db.models import Q
 from datetime import datetime
@@ -271,9 +275,33 @@ def log_out(request):
     logout(request)
     return redirect("home")
 
-
 def coupon(request):
-    return render(request,'app/user_coupon.html')
+    coupons = Coupon.objects.filter(coupon_type='public')
+    return render(request, 'app/user_coupon.html', {'coupons': coupons})
+
+
+def coupon_action(request):
+    if request.method == 'POST':  
+        coupon_code = request.POST.get("coupon_code")
+        try:
+            coupon = Coupon.objects.get(code=coupon_code)
+        except Coupon.DoesNotExist:
+      
+            return HttpResponse("Invalid coupon code", status=400)
+        total_paid = basket.get_total_price()
+
+        if coupon.is_valid(total_paid):
+            discount = coupon.calculate_discount(total_paid)
+           
+            discounted_total = total_paid - discount
+        
+        else:
+            return HttpResponse("Coupon is not valid for this purchase", status=400)
+
+        return HttpResponse("Coupon applied successfully")
+
+    return HttpResponse("Invalid request method", status=400)
+
 
 
 

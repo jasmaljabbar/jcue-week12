@@ -12,6 +12,10 @@ from .models import Category
 from django.contrib import messages
 from django.http import HttpResponse
 
+from .models import Coupon
+from .forms import CouponForm
+from .forms import EditCouponForm
+
 
 # Create your views here.
 @never_cache
@@ -378,6 +382,60 @@ def order_details(request, oid):
 def coupon_admin(request):
     coupons = Coupon.objects.all()
     return render(request, "admin/coupon_admin.html", {"coupons": coupons})
+
+
+# views.py in your user-side app
+
+
+def manage_coupons(request):
+    coupons = Coupon.objects.all()
+    form = CouponForm()
+
+    if request.method == 'POST':
+        form = CouponForm(request.POST)
+        if form.is_valid():
+            print('yes it works')
+            form.save()
+            return redirect('manage_coupons')
+        else:
+            print(form.errors)
+
+    return render(request, 'admin/manage_coupons.html', {'coupons': coupons, 'form': form})
+
+
+
+from django.shortcuts import render, redirect
+
+def edit_coupon(request, coupon_id):
+    coupon = get_object_or_404(Coupon, id=coupon_id)
+    form = CouponForm(instance=coupon)
+
+    if request.method == 'POST':
+        form = CouponForm(request.POST, instance=coupon)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Coupon edited successfully')
+            return redirect('manage_coupons')
+        else:
+            print(form.errors)
+            messages.error(request, 'Error editing coupon. Please correct the errors.')
+
+    return render(request, 'admin/edit_coupon.html', {'form': form, 'coupon': coupon})
+
+
+
+
+
+def delete_coupon(request, coupon_id):
+    print("Inside delete_coupon view")  # Add this line for debugging
+    coupon = get_object_or_404(Coupon, id=coupon_id)
+
+    if request.method == 'POST':
+        print("Handling POST request")  # Add this line for debugging
+        coupon.delete()
+        return redirect('manage_coupons')
+
+    return HttpResponse("Invalid request. Use a POST request to delete a coupon.")
 
 
 # def add_coupon_admin(request):

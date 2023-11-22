@@ -19,6 +19,7 @@ urlpatterns = [
     path('view_product/<int:pid>', views.view_product, name='view_product'),
     path('userprofile', views.userprofile, name='userprofile'),  
     path('coupon', views.coupon, name='coupon'),  
+    path('coupon_action', views.coupon_action, name='coupon_action'),  
     path('edit_profile', views.edit_profile, name='edit_profile'),  
     path('edit_profileaction', views.edit_profileaction, name='edit_profileaction'), 
     path('log_out', views.log_out, name='log_out'),

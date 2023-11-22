@@ -56,6 +56,7 @@ class Coupon(models.Model):
     code = models.CharField(max_length=50, unique=True)
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default=FIXED)
     discount_value = models.DecimalField(max_digits=5, decimal_places=2)
+    start_date = models.DateTimeField(default=timezone.now, blank=True)
     expire_date = models.DateTimeField()
     coupon_type = models.CharField(max_length=10, choices=COUPON_TYPE_CHOICES, default=PRIVATE)
     min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -66,7 +67,7 @@ class Coupon(models.Model):
         and whether the purchase amount meets the minimum requirement.
         """
         return (
-            self.expire_date > timezone.now() and
+            self.start_date <= timezone.now() <= self.expire_date and
             (self.coupon_type == self.PUBLIC or (self.coupon_type == self.PRIVATE and purchase_amount >= self.min_purchase_amount))
         )
 
@@ -83,7 +84,8 @@ class Coupon(models.Model):
 
     def __str__(self):
         return self.code
-    
+
     class Meta:
         verbose_name = 'Coupon'
         verbose_name_plural = 'Coupons'
+
