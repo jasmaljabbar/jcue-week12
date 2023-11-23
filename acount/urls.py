@@ -22,6 +22,7 @@ urlpatterns = [
     path('coupon_action', views.coupon_action, name='coupon_action'),  
     path('edit_profile', views.edit_profile, name='edit_profile'),  
     path('edit_profileaction', views.edit_profileaction, name='edit_profileaction'), 
+   
     path('log_out', views.log_out, name='log_out'),
     path('login_perform', views.login_perform, name='login_perform'),
 ]

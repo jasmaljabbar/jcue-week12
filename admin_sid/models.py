@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
+from django.contrib.auth.models import User 
 # Create your models here.
 
 class Category (models.Model):
@@ -54,6 +56,8 @@ class Coupon(models.Model):
 
     coupon_name = models.CharField(max_length=20, blank=True, null=True)
     code = models.CharField(max_length=50, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    flag = models.BooleanField(default=False) 
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default=FIXED)
     discount_value = models.DecimalField(max_digits=5, decimal_places=2)
     start_date = models.DateTimeField(default=timezone.now, blank=True)
@@ -61,15 +65,29 @@ class Coupon(models.Model):
     coupon_type = models.CharField(max_length=10, choices=COUPON_TYPE_CHOICES, default=PRIVATE)
     min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
+    def is_valid_for_user(self, user, total_paid):
+        # Check if the coupon is valid and hasn't been used by the given user
+        return self.is_valid(total_paid) and user not in self.user.all()
+    
+    
+    def save(self, *args, **kwargs):
+        if not self.start_date:
+            self.start_date = timezone.now()
+
+        
+        super().save(*args, **kwargs)
+
     def is_valid(self, purchase_amount):
-        """
-        Check if the coupon is still valid based on the expiration date
-        and whether the purchase amount meets the minimum requirement.
-        """
-        return (
-            self.start_date <= timezone.now() <= self.expire_date and
-            (self.coupon_type == self.PUBLIC or (self.coupon_type == self.PRIVATE and purchase_amount >= self.min_purchase_amount))
+        time_now = timezone.now() + timedelta(hours=5, minutes=30)
+
+        date_condition = self.start_date <= time_now <= self.expire_date
+        amount_condition = (
+            self.coupon_type == self.PUBLIC or 
+            (self.coupon_type == self.PRIVATE and purchase_amount >= self.min_purchase_amount)
         )
+
+
+        return date_condition and amount_condition
 
     def calculate_discount(self, total_amount):
         """
@@ -81,6 +99,7 @@ class Coupon(models.Model):
             return min(self.discount_value, total_amount)
         else:
             return 0  # No discount if the type is not recognized
+
 
     def __str__(self):
         return self.code

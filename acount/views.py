@@ -4,20 +4,19 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from acount.models import User_profile
-from basket import basket
-
 from orders.models import Order
+from django.utils import timezone
 from .utils import send_otp
 import pyotp
-
-from decimal import Decimal
+from payment.models import Address
 from django.db.models import Q
 from datetime import datetime
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from admin_sid.models import *
-from basket.models import CartItem , WishItem
+from basket.models import Cart, CartItem , WishItem
+
 
 # Create your views here.
 
@@ -270,6 +269,10 @@ def edit_profileaction(request):
     return redirect("edit_profile")
 
 
+
+
+
+
 def log_out(request):
     request.session.flush()
     logout(request)
@@ -281,26 +284,38 @@ def coupon(request):
 
 
 def coupon_action(request):
-    if request.method == 'POST':  
+    billing_address = Address.objects.filter(user=request.user)
+    if request.method == 'POST':
         coupon_code = request.POST.get("coupon_code")
         try:
             coupon = Coupon.objects.get(code=coupon_code)
         except Coupon.DoesNotExist:
-      
-            return HttpResponse("Invalid coupon code", status=400)
-        total_paid = basket.get_total_price()
+            return render(request, "payment/address.html", {"message": "Invalid coupon code"}, status=400)
 
-        if coupon.is_valid(total_paid):
+        user = request.user
+        cart, created = Cart.objects.get_or_create(user=user)
+        total_paid = cart.get_total_price()
+
+        if coupon.is_valid(total_paid) and not coupon.flag:
             discount = coupon.calculate_discount(total_paid)
-           
             discounted_total = total_paid - discount
-        
+            request.session['discounted_total'] = float(discounted_total)
+            coupon.flag = True
+            coupon.save()  # Save the user object after updating the flag
+
+            # Pass the discounted_total to the template context
+            return render(request, "payment/address.html", {"discounted_total": discounted_total,"billing_address":billing_address})
         else:
-            return HttpResponse("Coupon is not valid for this purchase", status=400)
+            return render(request, "payment/address.html", {"message": "Coupon is not valid for this purchase","billing_address":billing_address}, status=400)
 
-        return HttpResponse("Coupon applied successfully")
+    return render(request, "payment/address.html", {"message": "Invalid request method","billing_address":billing_address}, status=400)
 
-    return HttpResponse("Invalid request method", status=400)
+
+
+
+
+
+
 
 
 

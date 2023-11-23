@@ -1,6 +1,6 @@
 import json
 from django.shortcuts import get_object_or_404
-from admin_sid.models import Product
+from admin_sid.models import Coupon, Product
 from basket.basket import Basket
 from orders.models import Order, OrderItem
 from payment.models import Address
@@ -11,7 +11,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 import uuid
 from datetime import datetime
 # from .forms import CouponForm 
-
+from basket.models import Cart
 
 def order_placed(request):
     return render(request, "payment/orderplaced.html")
@@ -54,7 +54,8 @@ def generate_order_key():
 @login_required
 def address(request):
     billing_address = get_object_or_404(Address, user=request.user, flag=True)
-
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    shipping_price = cart.get_shipping_price()
     if request.method == "POST":
         basket = Basket(request)
 
@@ -62,6 +63,11 @@ def address(request):
             paymentmethod = request.POST.get("paymentMethod")
             total_paid = basket.get_total_price()
             order_key = generate_order_key()
+            discounted_total = None
+            discounted_total = request.session.get('discounted_total')
+
+            if discounted_total:  
+                total_paid = discounted_total 
 
             for item in basket.items:
                 product = item.product
@@ -74,6 +80,7 @@ def address(request):
                         {
                             "message": f"Insufficient stock for {product.title}",
                             "billing_address": billing_address,
+                            "shipping_price":shipping_price
                         },
                     )
 
@@ -109,10 +116,14 @@ def address(request):
                 return render(request, "payment/orderplaced.html")
             else:
                 # Handle other payment methods if needed
-                return render(request, "payment/UPI.html")
+                return render(request, "payment/UPI.html",{"discounted_total":discounted_total,
+                                                           "shipping_price":shipping_price})
 
     billing_address = Address.objects.filter(user=request.user)
-    return render(request, "payment/address.html", {"billing_address": billing_address})
+    return render(request, "payment/address.html", {"billing_address": billing_address,
+                                                    "shipping_price":shipping_price})
+
+
 
 
 
@@ -121,16 +132,19 @@ def address(request):
 
 def upi_paypal_com(request):
     billing_address = get_object_or_404(Address, user=request.user, flag=True)
-
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    shipping_price = cart.get_shipping_price()
     if request.method == "POST":
         basket = Basket(request)
 
         if billing_address:
             body = json.loads(request.body)
             paymentmethod = body.get("paymentmethod")
-            print(paymentmethod)
             total_paid = basket.get_total_price()
             order_key = generate_order_key()  
+            discounted_total = request.session.get('discounted_total')
+            if discounted_total:  
+                total_paid = discounted_total
 
             for item in basket:
                 product = item.product
@@ -142,6 +156,7 @@ def upi_paypal_com(request):
                         {
                             "message": f"Insufficient stock for {product.title}",
                             "billing_address": billing_address,
+                            "shipping_price":shipping_price
                         },
                     )
 
@@ -258,6 +273,8 @@ def delete_address(request, aid):
 @login_required
 def BasketView(request):
     billing_address = Address.objects.filter(user=request.user)
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    shipping_price = cart.get_shipping_price()
     if request.method == "POST":
         custname = request.POST.get("custName", "")
         address1 = request.POST.get("custAdd", "")
@@ -287,7 +304,8 @@ def BasketView(request):
                 flag=True,
             )
 
-    return render(request, "payment/address.html", {"billing_address": billing_address})
+    return render(request, "payment/address.html", {"billing_address": billing_address,
+                                                    "shipping_price":shipping_price})
 
 
 # -----------------------------------------

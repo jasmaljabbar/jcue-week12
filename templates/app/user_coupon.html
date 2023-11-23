@@ -93,6 +93,12 @@ Coupon - {{ coupon.coupon_name }}
                             </div>
                         </div>
                     </div>
+                    {% if  coupon.flag %}
+                      
+                    <div>
+                        <h6 style="color: red;">expired</h6>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         {% endfor %}

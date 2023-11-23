@@ -6,7 +6,11 @@ User Address
 {% endblock title %}
 
 {% block main-content %}
-
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">
+  {{ message }}
+</div>
+{% endfor %}
 <div class="container shadow p-3 mb-5 bg-white rounded">
   <div class="row">
     <div class="col-md-8">
@@ -93,9 +97,11 @@ User Address
             </tbody>
           </table>
           <p>Subtotal: ${{ basket.get_subtotal_price }}</p>
-          <p>Shipping Price: ${{basket.shipping_price}}</p>
+          <p>Shipping Price: ${{ shipping_price }}</p>
           <p>Total: ${{ basket.get_total_price }}</p>
-
+          {% if discounted_total %}
+            <p>Discounted Total: ${{ discounted_total }}</p>
+        {% endif %}
           <!-- Payment method radio buttons -->
           <form action="{% url 'payment:address' %}" method="post">
             {% csrf_token %}
@@ -115,7 +121,7 @@ User Address
 
           <!-- Place Order button -->
           <!-- Add this form to your checkout page -->
-          <form method="post" action="">
+          <form method="post" action="{% url 'coupon_action' %}">
             {% csrf_token %}
             <div class="input-group mb-3">
               <input type="text" class="form-control" name="coupon_code" placeholder="Coupon Code"

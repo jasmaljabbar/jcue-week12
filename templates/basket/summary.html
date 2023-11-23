@@ -87,7 +87,7 @@ Shopping Cart
       <div class="col-12 bg-light p-3 d-flex flex-column justify-content-end align-items-end">
         <div class="text-end">
           <div class="">Sub Total: <span class="fw-bold">₹</span>
-            <div id="subtotal" class="d-inline-flex fw-bold">{{cart_total}}</div>
+            <div id="subtotal" class="d-inline-flex fw-bold">{{ basket.get_subtotal_price }}</div>
           </div>
           <div id="">Shipping <span class="small">(Next day delivery)</span>: <span class="fw-bold">₹{{ shipping_price }}</span></div>
 
