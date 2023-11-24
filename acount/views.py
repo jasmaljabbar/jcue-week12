@@ -16,7 +16,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from admin_sid.models import *
 from basket.models import Cart, CartItem , WishItem
-
+from .models import Wallet
 
 # Create your views here.
 
@@ -269,7 +269,29 @@ def edit_profileaction(request):
     return redirect("edit_profile")
 
 
+@login_required
+def view_wallet(request):
+    try:
+        wallet = Wallet.objects.get(user=request.user)
+    except Wallet.DoesNotExist:
+        # If the wallet doesn't exist for the user, create a new one
+        wallet = Wallet.objects.create(user=request.user, balance=0)
 
+    return render(request, 'app/wallet.html', {'wallet': wallet})
+
+
+
+
+@login_required
+def add_funds(request):
+    if request.method == 'POST':
+        amount = float(request.POST.get('amount', 0))
+        wallet = Wallet.objects.get(user=request.user)
+        wallet.balance += amount
+        wallet.save()
+        return redirect('view_wallet')
+
+    return render(request, 'wallet/add_funds.html')
 
 
 

@@ -11,11 +11,12 @@ from .models import Category
 # Coupon
 from django.contrib import messages
 from django.http import HttpResponse
-
+from .forms import AdminReturnResponseForm
 from .models import Coupon
 from .forms import CouponForm
 from .forms import EditCouponForm
-
+from .forms import ReturnReasonForm
+from orders.models import Order, ReturnRequest
 
 # Create your views here.
 @never_cache
@@ -374,9 +375,12 @@ def order(request):
     return render(request, "admin/admin_order.html", {"orders": orders})
 
 
+# views.py
 def order_details(request, oid):
     orders = Order.objects.get(id=oid)
-    return render(request, "admin/order_details.html", {"orders": orders})
+    return_request = ReturnRequest.objects.filter(order=orders).first()
+    return render(request, "admin/order_details.html", {"orders": orders, 'return_request': return_request})
+
 
 
 def coupon_admin(request):
@@ -438,59 +442,44 @@ def delete_coupon(request, coupon_id):
     return HttpResponse("Invalid request. Use a POST request to delete a coupon.")
 
 
-# def add_coupon_admin(request):
-#     if request.method == "POST":
-#         coupon_name = request.POST.get("coupon_name")
-#         coupon_code = request.POST.get("code")
-#         discount = Decimal(request.POST.get("discount"))
-#         expiration_date = request.POST.get("expire_date")
-#         coupon_type = request.POST.get("coupon_type")
-#         min_purchase_amount = Decimal(request.POST.get("min_purchase_amount"))
-
-#         new_coupon = Coupon(
-#             coupon_name=coupon_name,
-#             code=coupon_code,
-#             discount=discount,
-#             expire_date=expiration_date,
-#             coupon_type=coupon_type,
-#             min_purchase_amount=min_purchase_amount,
-#         )
-#         new_coupon.save()
-
-#     return render(request, "admin/add_coupon.html")
-
-
-
-
-# def edit_coupon(request, id):
-#     coupon = get_object_or_404(Coupon, id=id)
-#     return render(request, "admin/edit_coupon.html", {"coupon": coupon})
-    
 
 
 
 
 
 
-# def update_coupon(request):
-#     if request.method == "POST":
-#         id = request.POST.get("id")
-#         try:
-#             coupon = get_object_or_404(Coupon, id=id)
-            
-#             # Update the coupon fields based on the form data
-#             coupon.coupon_name = request.POST.get("coupon_name")
-#             coupon.code = request.POST.get("code")
-#             coupon.discount = Decimal(request.POST.get("discount"))
-#             coupon.expire_date = request.POST.get("expire_date")
-#             coupon.coupon_type = request.POST.get("coupon_type")
-#             coupon.min_purchase_amount = Decimal(request.POST.get("min_purchase_amount"))
+# views.py
+from django.urls import reverse
 
-#             # Save the updated coupon
-#             coupon.save()
-            
-#             return redirect("coupon_admin")
-#         except Coupon.DoesNotExist:
-#             # Handle the case where the coupon with the given id does not exist.
-#             pass
+def handle_return_request(request, request_id):
+    return_request = get_object_or_404(ReturnRequest, id=request_id)
+
+    if request.method == 'POST':
+        response = request.POST.get('response')
+        if response in ['accepted', 'rejected']:
+            return_request.admin_response = response
+            return_request.save()
+
+            # Update the order status based on the admin response
+            order = return_request.order
+            if response == 'accepted':
+                order.status = 'returned'
+                order.save()
+                messages.success(request, 'Return request accepted.')
+            elif response == 'rejected':
+                messages.success(request, 'Return request rejected.')
+
+            return redirect(reverse('order_details', args=[order.id]))
+
+        else:
+            messages.error(request, 'Invalid response.')
+    else:
+        return render(request, 'admin/order_details.html', {'return_request': return_request})
+
+
+
+def return_requests_admin(request):
+    return_requests = ReturnRequest.objects.filter(admin_response__isnull=True)
+    return render(request, 'admin/order_details.html', {'return_requests': return_requests})
+
 

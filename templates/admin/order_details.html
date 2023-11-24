@@ -28,28 +28,83 @@
                         </thead>
                         <tbody>
                             {% for item in orders.items.all %}
-                                <tr>
-                                    <td>{{ item.product.title }}</td>
-                                    <td>
-                                        <img src="{{ item.product.image1.url }}" alt="{{ item.product.name }}" style="max-width: 50px; max-height: 50px;">
-                                    </td>
-                                    <td>₹{{ item.product.price }}</td>
-                                    <td>{{ item.quantity }}</td>
-                                </tr>
+                            <tr>
+                                <td>{{ item.product.title }}</td>
+                                <td>
+                                    <img src="{{ item.product.image1.url }}" alt="{{ item.product.name }}"
+                                        style="max-width: 50px; max-height: 50px;">
+                                </td>
+                                <td>₹{{ item.product.price }}</td>
+                                <td>{{ item.quantity }}</td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
 
-                    <p>Status: <span class="{% if order.status == 'canceled' %}text-danger{% endif %}">{{ orders.get_status_display }}</span></p>
+                    <p>Status: <span class="{% if order.status == 'canceled' %}text-danger{% endif %}">{{orders.get_status_display}}</span></p>
+                        
+                            
 
-                    {% if orders.status == 'confirmed' %}
-                        <form method="post" action="{% url 'payment:cancel_order' orders.id %}">
-                            {% csrf_token %}
-                            <input type="submit" id="cancel-order" onclick="return confirm('Do you want to cancel this order?');" value="Reject Order" class="btn btn-danger">
-                        </form>
+                    {% if order.status == 'confirmed' %}
+                    <form method="post" action="{% url 'payment:cancel_order' order.id %}">
+                        {% csrf_token %}
+                        <input type="submit" id="cancel-order"
+                            onclick="return confirm('Do you want to cancel this order?');" value="Reject Order"
+                            class="btn btn-danger">
+                    </form>
                     {% elif order.status == 'canceled' %}
-                        <p class="text-danger">This order has been canceled.</p>
-                    {% endif %} 
+                    <p class="text-danger">This order has been canceled.</p>
+                    {% endif %}
+
+                    <!-- Check if there is a return request and display its status -->
+                    {% if return_request %}
+                    <h6 class="mt-4">Return Request Status:</h6>
+                    <p>Return Request: {{ return_request.admin_response|default:"Pending" }}</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#viewReasonModal">
+                        View User's Reason
+                    </button>
+
+                    <!-- Modal for displaying user's reason -->
+
+                    <div class="modal fade" id="viewReasonModal" tabindex="-1" role="dialog"
+                        aria-labelledby="viewReasonModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="viewReasonModalLabel">User's Reason for Return</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    {% if return_request %}
+                                    <p>{{ return_request.user_reason|default:"No reason provided by the user." }}</p>
+                                    {% else %}
+                                    <p>No return request available.</p>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+
+                                    {% if return_request %}
+                                    {% if not return_request.admin_response %}
+                                    <!-- Add Accept and Reject buttons -->
+                                    <form method="post" action="{% url 'handle_return_request' return_request.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" name="response" value="accepted"
+                                            class="btn btn-success">Accept</button>
+                                        <button type="submit" name="response" value="rejected"
+                                            class="btn btn-danger">Reject</button>
+                                    </form>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% endif %}
                 </div>
             </div>
         </div>

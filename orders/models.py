@@ -17,6 +17,7 @@ class Order(models.Model):
     discounted_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     order_key = models.CharField(max_length=200, null=True, blank=True)
     billing_status = models.CharField(max_length=10,)
+    return_requested = models.BooleanField(default=False)
 
     # New field for order status
     ORDER_STATUS_CHOICES = [
@@ -58,3 +59,9 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+
+class ReturnRequest(models.Model):
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='return_request')
+    user_reason = models.TextField()
+    admin_response = models.CharField(max_length=20, choices=[('accepted', 'Accepted'), ('rejected', 'Rejected')], blank=True, null=True)

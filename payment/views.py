@@ -10,8 +10,12 @@ from django.contrib import messages
 from django.http import HttpResponseRedirect, JsonResponse
 import uuid
 from datetime import datetime
-# from .forms import CouponForm 
+from django.utils import timezone
 from basket.models import Cart
+from datetime import timedelta
+
+from admin_sid.forms import ReturnReasonForm
+from orders.models import Order, ReturnRequest
 
 def order_placed(request):
     return render(request, "payment/orderplaced.html")
@@ -24,31 +28,6 @@ def generate_order_key():
     return order_key
 
 
-# def apply_coupon(request):
-#     if request.method == 'POST':
-#         form = CouponForm(request.POST)
-#         if form.is_valid():
-#             coupon_code = form.cleaned_data['coupon_code']
-
-#             # Retrieve the coupon based on the provided code
-#             try:
-#                 coupon = Coupon.objects.get(code=coupon_code, active=True)
-#             except Coupon.DoesNotExist:
-#                 messages.error(request, 'Invalid coupon code')
-#                 return redirect('payment:address')  # Redirect to the address page or any other appropriate page
-
-#             # Apply the coupon logic here (e.g., update order total)
-#             # ...
-
-#             # Optionally, you can store the applied coupon in the session for reference
-#             request.session['applied_coupon'] = coupon.id
-
-#             messages.success(request, 'Coupon applied successfully')
-#             return redirect('payment:address')  # Redirect to the address page or any other appropriate page
-#     else:
-#         form = CouponForm()
-
-#     return render(request, 'payment/apply_coupon.html', {'form': form})
 
 
 @login_required
@@ -346,3 +325,37 @@ def order_cancel(request, order_id):
         return render(request, "payment/order_detail.html", {"order": order})
 
     return render(request, "payment/order_detail.html", {"order": order})
+
+
+
+
+
+
+
+
+
+def return_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    return_request, created = ReturnRequest.objects.get_or_create(order=order)
+
+    if request.method == 'POST':
+        form = ReturnReasonForm(request.POST)
+        if form.is_valid():
+            
+            return_request.user_reason = form.cleaned_data['reason']
+            return_request.save()
+            order.return_requested = True
+            order.save()
+
+            messages.success(request, 'Return request updated successfully.')
+            return redirect('payment:order_detail', order_id=order.id)
+        else:
+            messages.error(request, 'Invalid form submission.')
+    else:
+    
+        form = ReturnReasonForm(initial={'reason': return_request.user_reason if return_request else ''})
+
+    return render(request, 'payment/order_detail.html', {'form': form, 'order': order})
+
+ 

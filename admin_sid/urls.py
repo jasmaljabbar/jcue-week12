@@ -32,8 +32,10 @@ urlpatterns = [
     path('manage_coupons/', views.manage_coupons, name='manage_coupons'),
     path('delete_coupon/<int:coupon_id>/', views.delete_coupon, name='delete_coupon'),
     path('edit_coupon/<int:coupon_id>/', views.edit_coupon, name='edit_coupon'),
-    # path('add_coupon_admin', views.add_coupon_admin, name='add_coupon_admin'),
-    # path('edit_coupon/<int:id>', views.edit_coupon, name='edit_coupon'),
-    # path("update_coupon", views.update_coupon, name='update_coupon'),
     path('order_details/<int:oid>/', views.order_details, name='order_details'),
+    path('admin_sid/handle_return_request/<int:request_id>/', views.handle_return_request, name='handle_return_request'),
+    path('return_requests_admin', views.return_requests_admin, name='return_requests_admin'), 
+    path('admin_sid/handle_return_request/<int:request_id>/', views.handle_return_request, name='handle_return_request'),
+ 
+    
 ]
