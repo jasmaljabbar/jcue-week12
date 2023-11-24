@@ -7,8 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.contrib import messages
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from .models import Category 
-# Coupon
+from acount.models import  Wallet
 from django.contrib import messages
 from django.http import HttpResponse
 from .forms import AdminReturnResponseForm
@@ -445,12 +446,6 @@ def delete_coupon(request, coupon_id):
 
 
 
-
-
-
-# views.py
-from django.urls import reverse
-
 def handle_return_request(request, request_id):
     return_request = get_object_or_404(ReturnRequest, id=request_id)
 
@@ -465,7 +460,16 @@ def handle_return_request(request, request_id):
             if response == 'accepted':
                 order.status = 'returned'
                 order.save()
-                messages.success(request, 'Return request accepted.')
+
+                # Update wallet balance if the return is accepted
+                user_wallet = get_object_or_404(Wallet, user=order.user)
+                if order.discounted_total is None:
+                    user_wallet.balance += order.total_paid
+                else:
+                    user_wallet.balance += order.discounted_total
+                user_wallet.save()
+
+                messages.success(request, 'Return request accepted. Wallet balance updated successfully.')
             elif response == 'rejected':
                 messages.success(request, 'Return request rejected.')
 
@@ -475,6 +479,7 @@ def handle_return_request(request, request_id):
             messages.error(request, 'Invalid response.')
     else:
         return render(request, 'admin/order_details.html', {'return_request': return_request})
+
 
 
 

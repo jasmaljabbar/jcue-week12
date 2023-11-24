@@ -1,3 +1,38 @@
 <!-- templates/wallet/view_wallet.html -->
-<h2>Your Wallet Balance: ${{ wallet.balance }}</h2>
-<a href="{% url 'add_funds' %}">Add Funds</a>
+{% extends "app/base.html" %}
+{% load static %}
+{% block title %}
+wallet
+{% endblock title %}
+{% block main-content %}
+<section class="h-100 gradient-custom shadow">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-lg-10 col-xl-8">
+                <div class="card shadow" style="border-radius: 10px;">
+                    <div class="card-header px-4 py-5">
+                        <h5 class="text-muted mb-0">Available Balance, ${{ wallet.balance }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-subtitle mb-2 text-muted text-center"><b>Wallet History</b></h3>
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <p class="text-muted mb-0 w-25"></p>
+                            <p class="text-muted mb-0"
+                                style="color: <%= transaction.transactionType === 'credit' ? 'green' : 'red'; %> !important; font-weight: bold; font-size: 1.2em; width: 100px;">
+
+                            </p>
+                            <p class="text-muted mb-0"></p>
+                        </div>
+                        <hr>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% endblock %}

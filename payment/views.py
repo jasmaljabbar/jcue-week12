@@ -13,7 +13,7 @@ from datetime import datetime
 from django.utils import timezone
 from basket.models import Cart
 from datetime import timedelta
-
+from acount.models import  Wallet
 from admin_sid.forms import ReturnReasonForm
 from orders.models import Order, ReturnRequest
 
@@ -313,10 +313,17 @@ def order_cancel(request, order_id):
 
     if request.method == "POST":
         order_items = order.items.all()
-
+        user_wallet = get_object_or_404(Wallet, user=order.user)
         for order_item in order_items:
             product = order_item.product
             product.stock += order_item.quantity
+            if order.billing_status != 'cod':
+                if order.discounted_total is None:
+                    user_wallet.balance += order.total_paid
+                else:
+                    user_wallet.balance += order.discounted_total
+                user_wallet.save()
+
             product.save()
 
         order.status = "canceled"
