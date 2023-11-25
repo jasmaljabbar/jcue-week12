@@ -105,6 +105,12 @@ User Address
           <!-- Payment method radio buttons -->
           <form action="{% url 'payment:address' %}" method="post">
             {% csrf_token %}
+            {% if wallet_balense.balance >= basket.get_total_price %}
+            <div class="form-check">
+              <input type="radio" class="form-check-input" id="bankPayment" name="paymentMethod" value="wallet">
+              <label class="form-check-label" for="bankPayment">Use your wallet</label>
+            </div>
+            {% endif %}
             <div class="form-check">
               <input type="radio" class="form-check-input" id="bankPayment" name="paymentMethod" value="UPI">
               <label class="form-check-label" for="bankPayment">UPI</label>

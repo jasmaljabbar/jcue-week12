@@ -13,7 +13,7 @@ from datetime import datetime
 from django.utils import timezone
 from basket.models import Cart
 from datetime import timedelta
-from acount.models import  Wallet
+from acount.models import  Wallet,Wallet_History
 from admin_sid.forms import ReturnReasonForm
 from orders.models import Order, ReturnRequest
 
@@ -26,6 +26,7 @@ def generate_order_key():
     unique_id = str(uuid.uuid4().hex)[:6]  # Use the first 6 characters of a UUID
     order_key = f"ORDER-{timestamp}-{unique_id}"
     return order_key
+
 
 
 
@@ -62,8 +63,20 @@ def address(request):
                             "shipping_price":shipping_price
                         },
                     )
+            if paymentmethod == "cod" or paymentmethod == "wallet":
+                if paymentmethod == "wallet":
+                    user_wallet = Wallet.objects.get(user=request.user)
 
-            if paymentmethod == "cod":
+                    if user_wallet.balance >= total_paid:
+                        user_wallet.balance -= total_paid
+                        user_wallet.save()
+
+                        wallet_history = Wallet_History.objects.create(
+                            wallet=user_wallet,  # Use the wallet instance
+                            transaction_type='debit',
+                            amount=total_paid,
+                        )
+
                 order = Order.objects.create(
                     user=request.user,
                     full_name=billing_address.full_name,
@@ -177,6 +190,16 @@ def upi_paypal_com(request):
 
 
 
+
+
+
+
+
+
+
+
+
+
 def address_active(request, aid):
     billing_address = Address.objects.get(id=aid)
     act_address = Address.objects.filter(flag=True).first()
@@ -253,6 +276,7 @@ def delete_address(request, aid):
 def BasketView(request):
     billing_address = Address.objects.filter(user=request.user)
     cart, created = Cart.objects.get_or_create(user=request.user)
+    wallet_balense =Wallet.objects.get(user=request.user)
     shipping_price = cart.get_shipping_price()
     if request.method == "POST":
         custname = request.POST.get("custName", "")
@@ -284,7 +308,8 @@ def BasketView(request):
             )
 
     return render(request, "payment/address.html", {"billing_address": billing_address,
-                                                    "shipping_price":shipping_price})
+                                                    "shipping_price":shipping_price,
+                                                    'wallet_balense':wallet_balense})
 
 
 # -----------------------------------------

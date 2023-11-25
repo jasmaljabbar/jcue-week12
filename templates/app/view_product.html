@@ -13,14 +13,26 @@
                     <img class="zoomable-image selected-image" src="{{ vi_product.image1.url }}" style="width: auto; height: 300px;" alt="">
                 </div>
                 <div class="col-md-2 col-2 col-sm-12 my-2">
+                    {% if vi_product.image1 %}
+                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image1.url }}" style="width: 100px; height: 100px;" alt="">
+                    {% endif %}
+                </div>
+                <div class="col-md-2 col-2 col-sm-12 my-2">
+                    {% if vi_product.image2 %}
                     <img class="zoomable-image thumbnail-image" src="{{ vi_product.image2.url }}" style="width: 100px; height: 100px;" alt="">
+                    {% endif %}
                 </div>
                 <div class="col-md-2 col-2 col-sm-12 my-2">
+                    {% if vi_product.image3 %}
                     <img class="zoomable-image thumbnail-image" src="{{ vi_product.image3.url }}" style="width: 100px; height: 100px;" alt="">
+                    {% endif %}
                 </div>
                 <div class="col-md-2 col-2 col-sm-12 my-2">
+                    {% if vi_product.image4 %}
                     <img class="zoomable-image thumbnail-image" src="{{ vi_product.image4.url }}" style="width: 100px; height: 100px;" alt="">
+                    {% endif %}
                 </div>
+
             </div>
         </div>
 

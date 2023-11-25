@@ -16,7 +16,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from admin_sid.models import *
 from basket.models import Cart, CartItem , WishItem
-from .models import Wallet
+from .models import Wallet, Wallet_History
 
 # Create your views here.
 
@@ -274,10 +274,12 @@ def view_wallet(request):
     try:
         wallet = Wallet.objects.get(user=request.user)
     except Wallet.DoesNotExist:
-        # If the wallet doesn't exist for the user, create a new one
         wallet = Wallet.objects.create(user=request.user, balance=0)
 
-    return render(request, 'app/wallet.html', {'wallet': wallet})
+    
+    wallet_history = Wallet_History.objects.filter(wallet__user=request.user)
+
+    return render(request, 'app/wallet.html', {'wallet': wallet, 'wallet_history': wallet_history})
 
 
 

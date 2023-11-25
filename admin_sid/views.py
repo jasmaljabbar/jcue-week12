@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from .models import Category 
-from acount.models import  Wallet
+from acount.models import  Wallet,Wallet_History
 from django.contrib import messages
 from django.http import HttpResponse
 from .forms import AdminReturnResponseForm
@@ -18,6 +18,7 @@ from .forms import CouponForm
 from .forms import EditCouponForm
 from .forms import ReturnReasonForm
 from orders.models import Order, ReturnRequest
+
 
 # Create your views here.
 @never_cache
@@ -446,6 +447,7 @@ def delete_coupon(request, coupon_id):
 
 
 
+
 def handle_return_request(request, request_id):
     return_request = get_object_or_404(ReturnRequest, id=request_id)
 
@@ -464,9 +466,19 @@ def handle_return_request(request, request_id):
                 # Update wallet balance if the return is accepted
                 user_wallet = get_object_or_404(Wallet, user=order.user)
                 if order.discounted_total is None:
-                    user_wallet.balance += order.total_paid
+                    transaction_amount = order.total_paid
                 else:
-                    user_wallet.balance += order.discounted_total
+                    transaction_amount = order.discounted_total
+
+                # Create a new Wallet_History entry
+                wallet_history_entry = Wallet_History.objects.create(
+                    wallet=user_wallet,
+                    transaction_type='credit',  # Assuming it's a credit since it's a return
+                    amount=transaction_amount
+                )
+
+                # Update wallet balance
+                user_wallet.balance += transaction_amount
                 user_wallet.save()
 
                 messages.success(request, 'Return request accepted. Wallet balance updated successfully.')
