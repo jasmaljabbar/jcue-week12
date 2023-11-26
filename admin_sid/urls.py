@@ -6,6 +6,12 @@ from . import views
 urlpatterns = [
     
     path("admin_dsh",views.admin_dsh,name='admin_dsh'),
+    path("banner",views.banner,name='banner'),
+    path("add_banner",views.add_banner,name='add_banner'),
+    path("add_banner_action",views.add_banner_action,name='add_banner_action'),
+    path("edit_banner/<int:bid>",views.edit_banner,name='edit_banner'),
+    path("edt_banner_action",views.edt_banner_action,name='edt_banner_action'),
+    path("banner_action/<int:bid>",views.banner_action,name='banner_action'),
     path("show_category",views.show_category,name='show_category'),
     path("add_category",views.add_category,name='add_category'),
     path("add_category_action",views.add_category_action,name='add_category_action'),

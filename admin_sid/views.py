@@ -13,7 +13,7 @@ from acount.models import  Wallet,Wallet_History
 from django.contrib import messages
 from django.http import HttpResponse
 from .forms import AdminReturnResponseForm
-from .models import Coupon
+from .models import Coupon,Banner
 from .forms import CouponForm
 from .forms import EditCouponForm
 from .forms import ReturnReasonForm
@@ -28,6 +28,80 @@ def admin_dsh(request):
     else:
         return redirect("home")
 
+
+def banner(request):
+    banners= Banner.objects.all()
+    return render(request,'admin/show_banner.html',{'banners':banners})
+
+def add_banner(request):
+    if request.user.is_authenticated:
+        return render(request, "admin/add_banner.html")
+    else:
+        return redirect("home")
+    
+def add_banner_action(request):
+    if request.method == "POST":
+        new_banner = request.POST.get("new_banner")
+        link = request.POST.get("link")
+        img = request.FILES.get("img")
+        existing_category = Category.objects.filter(title=new_banner)
+
+        if existing_category.exists():
+            messages.error(request, "Category already exists")
+            return redirect("add_banner")
+        else:
+            banner = Banner(title=new_banner, image=img,link=link)
+            banner.save()
+
+    return redirect("banner")
+
+
+def banner_action(request,bid):
+    banner = Banner.objects.get(id=bid)
+    if banner.is_active:
+        banner.is_active = False
+    else:
+        banner.is_active = True
+    banner.save()
+    return redirect("banner")
+
+    
+def edit_banner(request,bid):
+    if request.user.is_authenticated:
+        banners = Banner.objects.get(id=bid)
+        return render(request, "admin/edit_banner.html", {'banners': banners})
+    else:
+        return redirect("home")
+
+
+
+def edt_banner_action(request):
+    if request.method == "POST":
+        banner_id = request.POST.get("id")
+        new_banner_name = request.POST.get("newcategory")  # Corrected variable name
+        new_banner_img = request.FILES.get("img")
+
+        if not banner_id or not new_banner_name:
+            messages.error(request, "Invalid data received.")
+            return redirect("add_banner")
+
+        existing_banner = Banner.objects.filter(title=new_banner_name).exclude(
+            id=banner_id
+        )
+        if existing_banner.exists():
+            messages.error(request, "Banner already exists")
+            return redirect("add_banner")
+
+        banner = get_object_or_404(Banner, id=banner_id)
+
+        banner.title = new_banner_name
+
+        if new_banner_img:
+            banner.image = new_banner_img
+
+        banner.save()
+
+        return redirect("banner")
 
 @never_cache
 def show_category(request):

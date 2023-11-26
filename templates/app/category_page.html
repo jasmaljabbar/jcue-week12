@@ -221,6 +221,36 @@ Products
 </div>
 
 
+<script>
+  $(document).ready(function () {
+    $(".thumbnail-image").click(function () {
+      var newImageSrc = $(this).attr("src");
+      $(".selected-image").attr("src", newImageSrc);
+    });
+
+    $(".add-to-cart-button").click(function () {
+      var productId = $(this).data("productid");
+
+      $.ajax({
+        type: 'POST',
+        url: '{% url "basket:basket_add" %}',
+        data: {
+          productid: productId,
+          productqty: 1,
+          csrfmiddlewaretoken: "{{csrf_token}}",
+          action: 'post'
+        },
+        success: function (json) {
+          window.location.reload();
+          document.getElementById("basket-qty").innerHTML = json.qty;
+        },
+        error: function (xhr, errmsg, err) {
+          // Handle error if needed
+        }
+      });
+    });
+  });
+</script>
 <style>
   body {
     overflow-x: hidden;

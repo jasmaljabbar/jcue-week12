@@ -24,7 +24,7 @@ from .models import Wallet, Wallet_History
 def home(request):
     user = request.user
     product = Product.objects.all()
-
+    active_banners = Banner.objects.filter(is_active=True)
     for p in product:
         if user.is_authenticated:
             p.in_basket = CartItem.objects.filter(user=user, product=p).exists()
@@ -33,7 +33,7 @@ def home(request):
             p.in_basket = False
             p.in_wishlist_count = False
 
-    return render(request, "app/home.html", {"product": product})
+    return render(request, "app/home.html", {"product": product,'active_banners':active_banners})
 
 def sign_up(request):
     if request.user.is_authenticated:
@@ -166,7 +166,15 @@ def home_perform(request):
 
 @never_cache
 def category_search(request, uid):
+    user = request.user
     product = Product.objects.filter(category=uid)
+    for p in product:
+        if user.is_authenticated:
+            p.in_basket = CartItem.objects.filter(user=user, product=p).exists()
+            p.in_wishlist_count = WishItem.objects.filter(user=user, product=p).exists()
+        else:
+            p.in_basket = False
+            p.in_wishlist_count = False
     return render(request, "app/category_page.html", {"product": product})
 
 
