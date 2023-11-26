@@ -26,4 +26,5 @@ urlpatterns = [
     path('wallet/add/', views.add_funds, name='add_funds'),
     path('log_out', views.log_out, name='log_out'),
     path('login_perform', views.login_perform, name='login_perform'),
+    
 ]

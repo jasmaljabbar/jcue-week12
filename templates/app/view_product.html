@@ -1,35 +1,40 @@
 {% extends "app/base.html" %}
 {% load static %}
 {% block title %}
-  Home
-{% endblock title %} 
-{% block main-content %}  
+Home
+{% endblock title %}
+{% block main-content %}
 <div class="container-fluid">
     <div class="row d-flex justify-content-center p-5">
         <div class="col-lg-6 col-12">
             <div class="row product-img d-flex justify-content-center">
-                
+
                 <div class="col-12 my-2 d-flex justify-content-center">
-                    <img class="zoomable-image selected-image" src="{{ vi_product.image1.url }}" style="width: auto; height: 300px;" alt="">
+                    <img class="zoomable-image selected-image" src="{{ vi_product.image1.url }}"
+                        style="width: auto; height: 300px;" alt="">
                 </div>
                 <div class="col-md-2 col-2 col-sm-12 my-2">
                     {% if vi_product.image1 %}
-                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image1.url }}" style="width: 100px; height: 100px;" alt="">
+                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image1.url }}"
+                        style="width: 100px; height: 100px;" alt="">
                     {% endif %}
                 </div>
                 <div class="col-md-2 col-2 col-sm-12 my-2">
                     {% if vi_product.image2 %}
-                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image2.url }}" style="width: 100px; height: 100px;" alt="">
+                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image2.url }}"
+                        style="width: 100px; height: 100px;" alt="">
                     {% endif %}
                 </div>
                 <div class="col-md-2 col-2 col-sm-12 my-2">
                     {% if vi_product.image3 %}
-                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image3.url }}" style="width: 100px; height: 100px;" alt="">
+                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image3.url }}"
+                        style="width: 100px; height: 100px;" alt="">
                     {% endif %}
                 </div>
                 <div class="col-md-2 col-2 col-sm-12 my-2">
                     {% if vi_product.image4 %}
-                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image4.url }}" style="width: 100px; height: 100px;" alt="">
+                    <img class="zoomable-image thumbnail-image" src="{{ vi_product.image4.url }}"
+                        style="width: 100px; height: 100px;" alt="">
                     {% endif %}
                 </div>
 
@@ -54,9 +59,15 @@
                     <td>Category</td>
                     <th class="text-capitalize">{{ vi_product.category.title }}</th>
                 </tr>
+
+
+
                 <tr>
                     <td>Price</td>
-                    <th class="text-capitalize">₹ {{ vi_product.price }} <del><small>₹{{ vi_product.old_price }}</small></del></th>
+                    <th class="text-capitalize">₹ {{ vi_product.price }} <del>
+                            {% if vi_product.old_price %}
+                            <small>₹{{ vi_product.old_price }}</small></del></th>
+                    {% endif %}
                 </tr>
                 <tr>
                     <td>Availability</td>
@@ -70,14 +81,14 @@
                 </tr>
             </table>
             {% if vi_product.stock > 0 %}
-              
+
             <div class="my-5">
                 <button type="button" id="add-button" value="{{vi_product.id}}" class="btn btn-success fw500">Add to
                     Cart</button>
-                    <a href="" class="btn btn-primary mx-2 px-2">Buy Now</a>
-                </div>
+                <a href="" class="btn btn-primary mx-2 px-2">Buy Now</a>
             </div>
-            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -92,22 +103,22 @@
     $(document).on('click', '#add-button', function (e) {
         //e.preventDefault();
         $.ajax({
-          type: 'POST',
-          url: '{% url "basket:basket_add" %}',
-          data: {
-            productid: $('#add-button').val(),
-            productqty: 1,
-            csrfmiddlewaretoken: "{{csrf_token}}",
-            action: 'post'
-          },
-          success: function (json) {
-            //alert("success");
-            window.location.reload();
-            document.getElementById("basket-qty").innerHTML = json.qty;
-          },
-          error: function (xhr, errmsg, err) {}
+            type: 'POST',
+            url: '{% url "basket:basket_add" %}',
+            data: {
+                productid: $('#add-button').val(),
+                productqty: 1,
+                csrfmiddlewaretoken: "{{csrf_token}}",
+                action: 'post'
+            },
+            success: function (json) {
+                //alert("success");
+                window.location.reload();
+                document.getElementById("basket-qty").innerHTML = json.qty;
+            },
+            error: function (xhr, errmsg, err) { }
         });
-      })
+    })
 </script>
 
 

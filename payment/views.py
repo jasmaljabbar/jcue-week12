@@ -28,14 +28,72 @@ def generate_order_key():
     return order_key
 
 
+@login_required
+def BasketView(request):
+    billing_address = Address.objects.filter(user=request.user)
+    cart, created = Cart.objects.get_or_create(user=request.user)
+
+    try:
+        wallet_balance = Wallet.objects.get(user=request.user)
+    except Wallet.DoesNotExist:
+        # If Wallet does not exist for the user, create a new one
+        Wallet.objects.create(user=request.user, balance=0)
+        wallet_balance = Wallet.objects.get(user=request.user)
+
+    shipping_price = cart.get_shipping_price()
+
+    if request.method == "POST":
+        custname = request.POST.get("custName", "")
+        address1 = request.POST.get("custAdd", "")
+        phone = request.POST.get("phone", "")
+        state = request.POST.get("state", "")
+        pincode = request.POST.get("pincode", "")
+        addresses = Address.objects.all()
+
+        if addresses:
+            try:
+                active_address = addresses.get(flag=True)
+                active_address.flag = False
+                active_address.save()
+            except Address.DoesNotExist:
+                pass
+
+        # Ensure the user is properly authenticated
+        if request.user.is_authenticated:
+            user = request.user
+
+            Address.objects.create(
+                user=user,
+                full_name=custname,
+                address1=address1,
+                phone=phone,
+                city=state,
+                post_code=pincode,
+                flag=True,
+            )
+
+    return render(request, "payment/address.html", {"billing_address": billing_address,
+                                                    "shipping_price": shipping_price,
+                                                    'wallet_balance': wallet_balance})
 
 
 
 @login_required
 def address(request):
-    billing_address = get_object_or_404(Address, user=request.user, flag=True)
+    try:
+        print('jasmal--------------------------------------------->')
+        billing_address = Address.objects.get(user=request.user, flag=True)
+    except Address.DoesNotExist:
+    # If billing address does not exist, handle it as needed
+        error_data = {
+            'error': 'No billing address found.',
+            'detail': 'Please add a billing address.'
+        }
+        return JsonResponse({'success': True,'error_data' : error_data})
+
     cart, created = Cart.objects.get_or_create(user=request.user)
     shipping_price = cart.get_shipping_price()
+
     if request.method == "POST":
         basket = Basket(request)
 
@@ -49,7 +107,7 @@ def address(request):
             if discounted_total:  
                 total_paid = discounted_total 
 
-            for item in basket.items:
+            for item in basket.items.all():  # Corrected line
                 product = item.product
                 if item.quantity > product.stock:
                     basket.clear()
@@ -60,9 +118,10 @@ def address(request):
                         {
                             "message": f"Insufficient stock for {product.title}",
                             "billing_address": billing_address,
-                            "shipping_price":shipping_price
+                            "shipping_price": shipping_price
                         },
                     )
+
             if paymentmethod == "cod" or paymentmethod == "wallet":
                 if paymentmethod == "wallet":
                     user_wallet = Wallet.objects.get(user=request.user)
@@ -72,7 +131,7 @@ def address(request):
                         user_wallet.save()
 
                         wallet_history = Wallet_History.objects.create(
-                            wallet=user_wallet,  # Use the wallet instance
+                            wallet=user_wallet,
                             transaction_type='debit',
                             amount=total_paid,
                         )
@@ -92,11 +151,11 @@ def address(request):
 
                 order_id = order.pk
 
-                for item in basket.items:
+                for item in basket.items.all():  # Corrected line
                     OrderItem.objects.create(
                         order=order,
                         product=item.product,
-                        price=item.product.price,  # Update this line with the correct attribute
+                        price=item.product.price,
                         quantity=item.quantity,
                     )
                     product = item.product
@@ -104,17 +163,16 @@ def address(request):
                     product.save()
 
                 basket.clear()
-
+                print('i am here----------------------------->')
                 return render(request, "payment/orderplaced.html")
             else:
                 # Handle other payment methods if needed
-                return render(request, "payment/UPI.html",{"discounted_total":discounted_total,
-                                                           "shipping_price":shipping_price})
+                return render(request, "payment/UPI.html", {"discounted_total": discounted_total,
+                                                             "shipping_price": shipping_price})
+        else:
+            return redirect('paymentBasketView')
 
-    billing_address = Address.objects.filter(user=request.user)
-    return render(request, "payment/address.html", {"billing_address": billing_address,
-                                                    "shipping_price":shipping_price})
-
+    return redirect('payment:BasketView')
 
 
 
@@ -272,47 +330,6 @@ def delete_address(request, aid):
     return redirect("payment:BasketView")
 
 
-@login_required
-def BasketView(request):
-    billing_address = Address.objects.filter(user=request.user)
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    wallet_balense =Wallet.objects.get(user=request.user)
-    shipping_price = cart.get_shipping_price()
-    if request.method == "POST":
-        custname = request.POST.get("custName", "")
-        address1 = request.POST.get("custAdd", "")
-        phone = request.POST.get("phone", "")
-        state = request.POST.get("state", "")
-        pincode = request.POST.get("pincode", "")
-        addresses = Address.objects.all()
-        if addresses:
-            try:
-                active_address = addresses.get(flag=True)
-                active_address.flag = False
-                active_address.save()
-            except:
-                pass
-
-        # Ensure the user is properly authenticated
-        if request.user.is_authenticated:
-            user = request.user
-
-            Address.objects.create(
-                user=user,
-                full_name=custname,
-                address1=address1,
-                phone=phone,
-                city=state,
-                post_code=pincode,
-                flag=True,
-            )
-
-    return render(request, "payment/address.html", {"billing_address": billing_address,
-                                                    "shipping_price":shipping_price,
-                                                    'wallet_balense':wallet_balense})
-
-
-# -----------------------------------------
 def oreder_view(request):
     orders = Order.objects.filter(user=request.user)
     order_statuses = {order.id: order.status for order in orders}
@@ -338,6 +355,7 @@ def order_cancel(request, order_id):
 
     if request.method == "POST":
         order_items = order.items.all()
+        
         user_wallet = get_object_or_404(Wallet, user=order.user)
         for order_item in order_items:
             product = order_item.product
@@ -347,6 +365,11 @@ def order_cancel(request, order_id):
                     user_wallet.balance += order.total_paid
                 else:
                     user_wallet.balance += order.discounted_total
+                wallet_history_entry = Wallet_History.objects.create(
+                    wallet=user_wallet,
+                    transaction_type='credit',  # Assuming it's a credit since it's a return
+                    amount=order.total_paid if order.discounted_total is None else order.discounted_total
+                )
                 user_wallet.save()
 
             product.save()

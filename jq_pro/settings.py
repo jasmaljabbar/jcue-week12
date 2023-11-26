@@ -30,6 +30,9 @@ ALLOWED_HOSTS = []
 
 SESSION_COOKIE_AGE = 86400
 
+LOGIN_REDIRECT_URL = '/'
+
+
 
 
 
@@ -48,6 +51,10 @@ INSTALLED_APPS = [
     'basket.apps.BasketConfig',
     'payment.apps.PaymentConfig',
     'orders.apps.OrdersConfig',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 
 ]
 
@@ -60,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'jq_pro.urls'
@@ -77,6 +85,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'acount.context_processor.categories',
                 'basket.context_processors.basket',
+                'django.template.context_processors.request',
               
             ],
         },
@@ -162,4 +171,27 @@ EMAIL_HOST_PASSWORD = 'lcpx hcyb naxq fbub'
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     # Add other backends as needed
+
+
 ]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': '51708528377-ec0pps4kfd8hhn1o9p5jhrbaphdfbmu9.apps.googleusercontent.com',
+            'secret': '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',
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+
+
+# ci 51708528377-ec0pps4kfd8hhn1o9p5jhrbaphdfbmu9.apps.googleusercontent.com
+# cs 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

@@ -216,7 +216,7 @@ def edit_product_action(request):
 
             product = Product.objects.get(id=id)
 
-            product.name = name
+            product.title = name
             product.description = description
             product.stock = stock
             try:
