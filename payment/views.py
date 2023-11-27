@@ -81,7 +81,6 @@ def BasketView(request):
 @login_required
 def address(request):
     try:
-        print('jasmal--------------------------------------------->')
         billing_address = Address.objects.get(user=request.user, flag=True)
     except Address.DoesNotExist:
     # If billing address does not exist, handle it as needed
@@ -160,10 +159,10 @@ def address(request):
                     )
                     product = item.product
                     product.stock -= item.quantity
+                    product.best_sellers += item.quantity
                     product.save()
 
                 basket.clear()
-                print('i am here----------------------------->')
                 return render(request, "payment/orderplaced.html")
             else:
                 # Handle other payment methods if needed
@@ -237,6 +236,7 @@ def upi_paypal_com(request):
                 # Update product stock
                 product = item.product
                 product.stock -= item.quantity
+                product.best_sellers += item.quantity
                 product.save()
 
             
@@ -360,6 +360,7 @@ def order_cancel(request, order_id):
         for order_item in order_items:
             product = order_item.product
             product.stock += order_item.quantity
+            product.best_sellers -= order_item.quantity
             if order.billing_status != 'cod':
                 if order.discounted_total is None:
                     user_wallet.balance += order.total_paid

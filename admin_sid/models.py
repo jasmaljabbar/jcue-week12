@@ -33,11 +33,12 @@ class Product (models.Model):
     price = models.DecimalField(max_digits=99999,decimal_places=2)
     old_price = models.DecimalField(max_digits=99999,decimal_places=2)
     stock = models.IntegerField()
+    best_sellers = models.IntegerField(default=0)
 
     def __str__(self):
         return self.title
 
-
+best_sellers = Product.objects.filter(active=True).order_by('-best_sellers')[:4]
 
 class Coupon(models.Model):
     PUBLIC = 'public'
@@ -66,7 +67,6 @@ class Coupon(models.Model):
     min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def is_valid_for_user(self, user, total_paid):
-        # Check if the coupon is valid and hasn't been used by the given user
         return self.is_valid(total_paid) and user not in self.user.all()
     
     

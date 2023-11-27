@@ -5,7 +5,7 @@ Home
 {% endblock title %}
 
 {% block banner_slider %}
-<div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
+<div id="carouselExample" class="carousel slide">
   <div class="carousel-inner">
     {% for banner in active_banners %}
     <div class="carousel-item {% if forloop.first %}active{% endif %}">
@@ -15,6 +15,15 @@ Home
     </div>
     {% endfor %}
   </div>
+  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Previous</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Next</span>
+  </button>
+
 </div>
 {% endblock banner_slider %}
 
@@ -148,6 +157,40 @@ Home
     font-weight: 500;
     letter-spacing: .1em;
   }
+
+
+  .best-icon {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 24px;
+
+    cursor: pointer;
+  }
+
+  .fa-star,
+  .fa-heart {
+    margin-right: 5px;
+  }
+
+  .product_sale {
+    position: absolute;
+    z-index: 99;
+    right: 0;
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    transform: rotate(-45deg);
+    left: -170px;
+    top: 18px;
+  }
+
+  .product_sale p {
+    margin: 0;
+    color: #fff;
+    background: #ff0000;
+    padding: 3px 25px;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
+  }
 </style>
 
 <div class="image-container">
@@ -161,6 +204,64 @@ Home
   {% endfor %}
 </div>
 <!-- ... (previous code) ... -->
+
+
+<!-- Display Top 4 Best Sellers -->
+<div class="container p-5">
+
+  <div class="row">
+    {% for best_seller in best_sellers %}
+    <div class="col-md-3 col-sm-6 mb-4">
+      <div class="product-card">
+        <div class="product-img">
+          <!-- <i class="fa-solid fa-star best-icon" style="color: #d8d341;"></i> -->
+          <div class="product_sale">
+            <p>Best Sale</p>
+          </div>
+          {% if best_seller.in_wishlist_count %}
+          <a href="{% url 'basket:add_to_wishlist' best_seller.id %}">
+            <i class="fas fa-heart wishlist-icon " style="color: red;"></i>
+          </a>
+          {% else %}
+          {% if request.user.is_authenticated %}
+          <a href="{% url 'basket:add_to_wishlist' best_seller.id %}">
+            {% endif %}
+            <i class="fas fa-heart wishlist-icon"></i>
+          </a>
+          {% endif %}
+          <a href="{% url 'view_product' best_seller.id %}">
+            <img src="{{ best_seller.image1.url }}" class="card-img-top" alt="{{ best_seller.title }}">
+
+          </a>
+        </div>
+        <div class="product-details">
+          <h4>{{ best_seller.title }}</h4>
+          <div class="product-cart">
+            {% if best_seller.stock > 0 %}
+            <div class="product-cart">
+              {% if best_seller.in_basket %}
+              <a href="{% url 'basket:basket_summary' %}">
+                <button type="button" class="btn btn-primary">Go to Cart</button>
+              </a>
+              {% else %}
+              <button type="button" class="add-to-cart-button btn btn-primary" data-productid="{{ best_seller.id }}">Add
+                to Cart</button>
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="product-cart">
+              <button class="btn-danger">Out of Stock</button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+</div>
+
 
 <div class="container p-5">
   <div class="row">

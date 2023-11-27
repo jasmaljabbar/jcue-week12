@@ -6,11 +6,7 @@ User Address
 {% endblock title %}
 
 {% block main-content %}
-{% for message in messages %}
-<div class="alert alert-{{ message.tags }}">
-  {{ message }}
-</div>
-{% endfor %}
+
 <div class="container shadow p-3 mb-5 bg-white rounded">
   <div class="row">
     <div class="col-md-8">
@@ -107,7 +103,7 @@ User Address
           {% if billing_address %}
           <form action="{% url 'payment:address' %}" method="post">
             {% csrf_token %}
-            {% if wallet_balense.balance >= basket.get_total_price %}
+            {% if wallet_balance.balance >= basket.get_total_price %}
             <div class="form-check">
               <input type="radio" class="form-check-input" id="bankPayment" name="paymentMethod" value="wallet">
               <label class="form-check-label" for="bankPayment">Use your wallet</label>

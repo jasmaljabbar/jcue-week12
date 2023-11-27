@@ -550,7 +550,7 @@ def handle_return_request(request, request_id):
                     transaction_type='credit',  # Assuming it's a credit since it's a return
                     amount=transaction_amount
                 )
-
+                
                 # Update wallet balance
                 user_wallet.balance += transaction_amount
                 user_wallet.save()

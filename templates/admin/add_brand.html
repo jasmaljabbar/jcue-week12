@@ -4,16 +4,6 @@
     <h1>Add New Brand</h1>
 
     <form method="post" action="{% url 'add_brand_action' %}" class="border border-dark rounded p-4" enctype="multipart/form-data">
-        {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <strong>Error!</strong> {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            {% endfor %}
-        {% endif %}
         {% csrf_token %}
 
         <div class="form-group">

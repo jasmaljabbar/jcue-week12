@@ -20,11 +20,12 @@ from .models import Wallet, Wallet_History
 
 # Create your views here.
 
-
 def home(request):
     user = request.user
-    product = Product.objects.all()
+    product = Product.objects.all()[:12]
     active_banners = Banner.objects.filter(is_active=True)
+    best_sellers = Product.objects.filter(active=True).order_by('-best_sellers')[:4]
+
     for p in product:
         if user.is_authenticated:
             p.in_basket = CartItem.objects.filter(user=user, product=p).exists()
@@ -33,7 +34,15 @@ def home(request):
             p.in_basket = False
             p.in_wishlist_count = False
 
-    return render(request, "app/home.html", {"product": product,'active_banners':active_banners})
+    for best_seller in best_sellers:
+        if user.is_authenticated:
+            best_seller.in_basket = CartItem.objects.filter(user=user, product=best_seller).exists()
+            best_seller.in_wishlist_count = WishItem.objects.filter(user=user, product=best_seller).exists()
+
+    return render(request, "app/home.html", {"product": product, 'active_banners': active_banners, 'best_sellers': best_sellers})
+
+
+
 
 def sign_up(request):
     if request.user.is_authenticated:
@@ -413,8 +422,6 @@ def forgot_password(request):
     print("User ID from session:", id)
     return render(request, "app/forgetpassword.html")
 
-
-from django.shortcuts import render, redirect
 
 
 def new_password(request):

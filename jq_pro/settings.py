@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 SESSION_COOKIE_AGE = 86400
 
 LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 
 
@@ -151,7 +152,7 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = '/images/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
-LOGIN_REDIRECT_URL = '/profile'
+
 
 #Basket session ID
 BASKET_SESSION_ID = 'basket'
@@ -192,6 +193,7 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+SOCIALACCOUNT_LOGIN_ON_GET=True
 
 # ci 51708528377-ec0pps4kfd8hhn1o9p5jhrbaphdfbmu9.apps.googleusercontent.com
 # cs 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

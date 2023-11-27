@@ -71,9 +71,9 @@
                     </td>
                     <td>
                         {% if banner.is_active %}
-                        <a href="{% url 'banner_action' banner.id %}" class="btn btn-success"> Available</a>
+                        <a href="{% url 'banner_action' banner.id %}" class="btn btn-success"> Active</a>
                         {% else %}
-                        <a href="{% url 'banner_action' banner.id %}" class="btn btn-danger">Not Available</a>
+                        <a href="{% url 'banner_action' banner.id %}" class="btn btn-danger">Not Active</a>
                         {% endif %}
                     </td>
                 </tr>
