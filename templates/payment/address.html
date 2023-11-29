@@ -9,14 +9,44 @@ User Address
 
 <div class="container shadow p-3 mb-5 bg-white rounded">
   <div class="row">
+
     <div class="col-md-8">
       <h2>Your Addresses</h2>
 
       <div class="col-md-12">
         {% for address in billing_address %}
+        {% if address.flag %}
+        <div class="card mx-auto my-5" style="width: 18rem;">
+          <div class="card-body">
+            <h5 class="card-title">Address Information</h5>
+            <p class="card-text"><strong>Customer Name:</strong> {{ address.full_name }}</p>
+            <p class="card-text"><strong>Email:</strong> {{ address.user.email }}</p>
+            <p class="card-text"><strong>Address:</strong> {{ address.address1 }}</p>
+            <p class="card-text"><strong>Address 2:</strong> {{ address.address2 }}</p>
+            <p class="card-text"><strong>State:</strong> {{ address.city }}</p>
+            <p class="card-text"><strong>Postcode:</strong> {{ address.post_code }}</p>
+
+            <div class="d-flex justify-content-between mt-3">
+              <!-- Edit button -->
+              <a href="{% url 'payment:edit_address' address.id %}" class="btn btn-warning btn-sm">Edit</a>
+
+              <!-- Delete button -->
+              {% if not address.flag %}
+              <a href="{% url 'payment:delete_address' address.id %}" class="btn btn-danger btn-sm">Delete</a>
+
+              <!-- Make active button -->
+              <a href="{% url 'payment:address_active' address.id %}" class="btn btn-primary btn-sm">Make Active</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        {% for address in billing_address %}
+        {% if not address.flag %}
         <div class="card d-flex justify-content-between align-items-center" style="width: 18rem; margin-bottom: 10px;">
           <div>
-
             <p><strong>Customer Name:</strong> {{ address.full_name }}</p>
             <p><strong>Email:</strong> {{ address.user.email }}</p>
             <p><strong>Address:</strong> {{ address.address1 }}</p>
@@ -25,7 +55,6 @@ User Address
             <p><strong>Postcode:</strong> {{ address.post_code }}</p>
             <!-- Add more fields as needed -->
           </div>
-
           <div class="d-flex">
             <!-- Edit button -->
             <a href="{% url 'payment:edit_address' address.id  %}" class="btn btn-warning btn-sm">Edit</a>
@@ -34,18 +63,18 @@ User Address
             {% if not address.flag %}
             <a href="{% url 'payment:delete_address' address.id %}" class="btn btn-danger btn-sm">Delete</a>
             &nbsp;
-
             <a href="{% url 'payment:address_active' address.id  %}" class="btn btn-primary btn-sm">Make active</a>
-
-
             {% endif %}
           </div>
           <br>
         </div>
+        {% endif %}
         {% endfor %}
         <a href="{% url 'payment:add_address' %}" class="btn btn-success btn-sm">Add Address</a>
       </div>
     </div>
+
+
 
     <div class="col-md-4">
       <div class="card">
@@ -110,17 +139,17 @@ User Address
             </div>
             {% endif %}
             <div class="form-check">
-              <input type="radio" class="form-check-input" id="bankPayment" name="paymentMethod" value="UPI">
+              <input type="radio" class="form-check-input" id="bankPayment" name="paymentMethod" value="UPI" required>
               <label class="form-check-label" for="bankPayment">UPI</label>
             </div>
             <div class="form-check">
-              <input type="radio" class="form-check-input" id="codPayment" name="paymentMethod" value="cod">
+              <input type="radio" class="form-check-input" id="codPayment" name="paymentMethod" value="cod" readonly>
               <label class="form-check-label" for="codPayment">Cash on Delivery</label>
             </div>
+            <br>
             <button type="submit" class="btn btn-primary btn-block">Place Order</button>
           </form>
           <!-- Coupon input field -->
-          <br>
           {% else %}
           <button type="submit" onclick="selectAddress()" class="btn btn-primary btn-block">Place Order</button>
           <br>
@@ -129,16 +158,42 @@ User Address
           <!-- Place Order button -->
           <!-- Add this form to your checkout page -->
           <br>
+
+          <h2></h2>
+
+
           <form method="post" action="{% url 'coupon_action' %}">
             {% csrf_token %}
             <div class="input-group mb-3">
               <input type="text" class="form-control" name="coupon_code" placeholder="Coupon Code"
-                aria-label="Coupon Code" aria-describedby="applyCoupon">
+                aria-label="Coupon Code" aria-describedby="applyCoupon" required>
               <div class="input-group-append">
                 <button class="btn btn-outline-secondary" type="submit" id="applyCoupon">Apply Coupon</button>
               </div>
+
+              <div><a href="{% url 'remove_coupon' %}" class="btn btn-danger">Remove</a></div>
+
             </div>
           </form>
+          <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              {% if coupons %}
+              Available Coupons
+              {% endif %}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              {% if coupons %}
+              {% for coupon in coupons %}
+              <div class="dropdown-item">
+                {{ coupon.code }} - {{ coupon.discount_value }}% off
+              </div>
+              {% endfor %}
+              {% else %}
+              <span class="dropdown-item text-muted">No coupons available</span>
+              {% endif %}
+            </div>
+          </div>
 
         </div>
       </div>
@@ -149,8 +204,10 @@ User Address
 <script>
 
 
+
+
   function selectAddress() {
-    
+
     console.log('{% url "payment:address" %}');
 
     $.ajax({
@@ -180,8 +237,6 @@ User Address
       }
     });
   }
-
-
 
 </script>
 

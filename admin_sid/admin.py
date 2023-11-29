@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Brand, Product, Coupon, Banner
+from .models import Category, Brand, Product, Coupon, Banner, Variant
 
 # Register your models here.
 
@@ -27,6 +27,7 @@ from .models import Category, Brand, Product, Coupon, Banner
 admin.site.register(Category)
 admin.site.register(Brand)
 admin.site.register(Product)
+admin.site.register(Variant)
 admin.site.register(Banner)
 
 @admin.register(Coupon)

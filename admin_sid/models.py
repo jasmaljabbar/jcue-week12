@@ -4,34 +4,44 @@ from datetime import timedelta
 from django.contrib.auth.models import User 
 # Create your models here.
 
-class Category (models.Model):
+class Category(models.Model):
     title = models.CharField(max_length=100)
     active = models.BooleanField(default=True)
-    image = models.ImageField(upload_to='category',null=True, blank=True)
+    image = models.ImageField(upload_to='category', null=True, blank=True)
 
     def __str__(self):
         return self.title
 
-class Brand (models.Model):
+class Brand(models.Model):
     title = models.CharField(max_length=100)
     active = models.BooleanField(default=True)
-    image = models.ImageField(upload_to='brand',null=True, blank=True)
-    
+    image = models.ImageField(upload_to='brand', null=True, blank=True)
+
     def __str__(self):
         return self.title
 
-class Product (models.Model):
+class Variant(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True)  # Optional additional data
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.title
+
+class Product(models.Model):
     title = models.CharField(max_length=100)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
+    variants = models.ManyToManyField(Variant, blank=True)
     image1 = models.ImageField(upload_to='prodents')
-    image2 = models.ImageField(upload_to='prodents',null=True)
-    image3 = models.ImageField(upload_to='prodents',null=True)
+    image2 = models.ImageField(upload_to='prodents', null=True)
+    image3 = models.ImageField(upload_to='prodents', null=True)
     image4 = models.ImageField(upload_to='prodents', null=True)
     active = models.BooleanField(default=True)
     description = models.TextField()
-    price = models.DecimalField(max_digits=99999,decimal_places=2)
-    old_price = models.DecimalField(max_digits=99999,decimal_places=2)
+    price = models.DecimalField(max_digits=99999, decimal_places=2)
+    old_price = models.DecimalField(max_digits=99999, decimal_places=2)
     stock = models.IntegerField()
     best_sellers = models.IntegerField(default=0)
 

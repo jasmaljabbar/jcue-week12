@@ -9,6 +9,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import HttpResponseRedirect, JsonResponse
 import uuid
+from django.db.models import Q
 from datetime import datetime
 from django.utils import timezone
 from basket.models import Cart
@@ -35,8 +36,13 @@ def BasketView(request):
 
     try:
         wallet_balance = Wallet.objects.get(user=request.user)
+        user = request.user
+        coupons = Coupon.objects.filter(
+            Q(coupon_type='public') &
+            Q(expire_date__gte=timezone.now()) &
+            Q(min_purchase_amount__lte=cart.get_total_price())& 
+            ~Q(user=user))
     except Wallet.DoesNotExist:
-        # If Wallet does not exist for the user, create a new one
         Wallet.objects.create(user=request.user, balance=0)
         wallet_balance = Wallet.objects.get(user=request.user)
 
@@ -49,6 +55,7 @@ def BasketView(request):
         state = request.POST.get("state", "")
         pincode = request.POST.get("pincode", "")
         addresses = Address.objects.all()
+    
 
         if addresses:
             try:
@@ -58,7 +65,7 @@ def BasketView(request):
             except Address.DoesNotExist:
                 pass
 
-        # Ensure the user is properly authenticated
+
         if request.user.is_authenticated:
             user = request.user
 
@@ -74,7 +81,8 @@ def BasketView(request):
 
     return render(request, "payment/address.html", {"billing_address": billing_address,
                                                     "shipping_price": shipping_price,
-                                                    'wallet_balance': wallet_balance})
+                                                    'wallet_balance': wallet_balance,
+                                                    "coupons": coupons,})
 
 
 
@@ -102,9 +110,11 @@ def address(request):
             order_key = generate_order_key()
             discounted_total = None
             discounted_total = request.session.get('discounted_total')
+            coupon_code = request.session.get('coupon-code')
 
             if discounted_total:  
                 total_paid = discounted_total 
+                coupon = Coupon.objects.get(code=coupon_code)
 
             for item in basket.items.all():  # Corrected line
                 product = item.product
@@ -161,9 +171,17 @@ def address(request):
                     product.stock -= item.quantity
                     product.best_sellers += item.quantity
                     product.save()
-
-                basket.clear()
-                return render(request, "payment/orderplaced.html")
+                try:
+                    request.session['coupon-code'] = coupon_code
+                    coupon = Coupon.objects.get(code=coupon_code)
+                    coupon.user = request.user
+                    coupon.save()
+                    basket.clear()
+                    return render(request, "payment/orderplaced.html")
+                except:
+                    # Handle exceptions related to the coupon code if needed
+                    basket.clear()
+                    return render(request, "payment/orderplaced.html")
             else:
                 # Handle other payment methods if needed
                 return render(request, "payment/UPI.html", {"discounted_total": discounted_total,
@@ -192,8 +210,10 @@ def upi_paypal_com(request):
             total_paid = basket.get_total_price()
             order_key = generate_order_key()  
             discounted_total = request.session.get('discounted_total')
+            coupon_code = request.session.get('coupon-code')
             if discounted_total:  
                 total_paid = discounted_total
+                coupon = Coupon.objects.get(code=coupon_code)
 
             for item in basket:
                 product = item.product
@@ -239,20 +259,15 @@ def upi_paypal_com(request):
                 product.best_sellers += item.quantity
                 product.save()
 
-            
+            request.session['coupon-code'] = coupon_code
+            coupon = Coupon.objects.get(code=coupon_code)
+            coupon.user = request.user
+            coupon.save()        
             basket.clear()
 
             return JsonResponse("Payment completed", safe=False)
 
     return JsonResponse("Invalid request", safe=False)
-
-
-
-
-
-
-
-
 
 
 

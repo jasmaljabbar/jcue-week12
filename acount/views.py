@@ -321,38 +321,46 @@ def log_out(request):
 
 def coupon(request):
     coupons = Coupon.objects.filter(coupon_type='public')
-    return render(request, 'app/user_coupon.html', {'coupons': coupons})
+    user = request.user
+    return render(request, 'app/user_coupon.html', {'coupons': coupons,
+                                                    'user_is':user})
 
 
 def coupon_action(request):
     billing_address = Address.objects.filter(user=request.user)
     if request.method == 'POST':
         coupon_code = request.POST.get("coupon_code")
-        try:
-            coupon = Coupon.objects.get(code=coupon_code)
-        except Coupon.DoesNotExist:
-            return render(request, "payment/address.html", {"message": "Invalid coupon code"}, status=400)
-
         user = request.user
         cart, created = Cart.objects.get_or_create(user=user)
         total_paid = cart.get_total_price()
+        shipping_price = cart.get_shipping_price()
+        try:
+            coupon = Coupon.objects.get(code=coupon_code)
+            coupons = Coupon.objects.filter(Q(coupon_type='public') &
+                                            Q(expire_date__gte=timezone.now()) &
+                                            Q(min_purchase_amount__lte=cart.get_total_price()) & 
+                                            ~Q(user=request.user))
+            request.session['coupon-code'] = coupon_code
+        except Coupon.DoesNotExist:
+            return render(request, "payment/address.html", {"message": "Invalid coupon code"}, status=400)
+
 
         if coupon.is_valid(total_paid) and not coupon.flag:
             discount = coupon.calculate_discount(total_paid)
             discounted_total = total_paid - discount
             request.session['discounted_total'] = float(discounted_total)
-            coupon.flag = True
-            coupon.save()  # Save the user object after updating the flag
+            coupon.save()  
 
-            # Pass the discounted_total to the template context
-            return render(request, "payment/address.html", {"discounted_total": discounted_total,"billing_address":billing_address})
+
+            return render(request, "payment/address.html", {"discounted_total": discounted_total,"billing_address":billing_address,'coupons':coupons,"shipping_price": shipping_price,})
         else:
             return render(request, "payment/address.html", {"message": "Coupon is not valid for this purchase","billing_address":billing_address}, status=400)
 
     return render(request, "payment/address.html", {"message": "Invalid request method","billing_address":billing_address}, status=400)
 
 
-
+def remove_coupon(request):
+    return redirect('payment:BasketView')
 
 
 
