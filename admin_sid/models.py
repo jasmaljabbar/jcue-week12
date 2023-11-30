@@ -20,20 +20,12 @@ class Brand(models.Model):
     def __str__(self):
         return self.title
 
-class Variant(models.Model):
-    title = models.CharField(max_length=100)
-    description = models.TextField(blank=True)  # Optional additional data
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
-    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True, blank=True)
 
-    def __str__(self):
-        return self.title
 
 class Product(models.Model):
     title = models.CharField(max_length=100)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
-    variants = models.ManyToManyField(Variant, blank=True)
     image1 = models.ImageField(upload_to='prodents')
     image2 = models.ImageField(upload_to='prodents', null=True)
     image3 = models.ImageField(upload_to='prodents', null=True)

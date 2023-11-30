@@ -1,33 +1,10 @@
 from django.contrib import admin
-from .models import Category, Brand, Product, Coupon, Banner, Variant
-
-# Register your models here.
-
-# class CategoryAdmin(admin.ModelAdmin):
-#     list_display = ('title')
-
-# class BrandAdmin(admin.ModelAdmin):
-#     list_display = ('title')
-
-# class ProductAdmin(admin.ModelAdmin):
-#     list_display = ('title',
-#                     'category',
-#                     'brand',
-#                     'image1',
-#                     'image2',
-#                     'image3',
-#                     'image4',
-#                     'description',
-#                     'price',
-#                     'old_price',
-#                     'stock')
-
+from .models import Category, Brand, Product, Coupon, Banner
 
 
 admin.site.register(Category)
 admin.site.register(Brand)
 admin.site.register(Product)
-admin.site.register(Variant)
 admin.site.register(Banner)
 
 @admin.register(Coupon)

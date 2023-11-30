@@ -7,6 +7,23 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title text-center">Order History</h5>
+
+                    <!-- Add Search Field -->
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by customer name">
+                    </div>
+
+                    <!-- Add Order Status Filter -->
+                    <div class="mb-3">
+                        <label for="orderStatusFilter" class="form-label">Filter by Order Status:</label>
+                        <select class="form-select" id="orderStatusFilter">
+                            <option value="" selected>All</option>
+                            {% for status, _ in orders.0.ORDER_STATUS_CHOICES %}
+                                <option value="{{ status }}">{{ status }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -20,30 +37,34 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for order in orders %}   
+                            {% if orders %}
+                                {% for order in orders %}
+                                    <tr data-customer-name="{{ order.full_name }}" data-order-status="{{ order.status }}">
+                                        <td>{{ order.id }}</td>
+                                        <td>{{ order.full_name }}</td>
+                                        <td>
+                                            <form action="{% url 'order' %}" method="post">
+                                                {% csrf_token %}
+                                                <select name="status" id="status_{{ order.id }}">
+                                                    {% for status, _ in order.ORDER_STATUS_CHOICES %}
+                                                        <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <input type="hidden" name="orderId" value="{{ order.id }}">
+                                                <button type="submit">Update Status</button>
+                                            </form>
+                                        </td>
+                                        <td>{{ order.created }}</td>
+                                        <td>{{ order.billing_status }}</td>
+                                        <td>₹{{ order.total_paid }}</td>
+                                        <td><a class="btn btn-Primary" href="{% url 'order_details' order.id %}">View</a></td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
                                 <tr>
-                                    <td>{{ order.id }}</td>
-                                    <td>{{ order.full_name }}</td>
-                                    <td>
-                                        <form action="{% url 'order' %}" method="post">
-                                            {% csrf_token %}
-                                            <select name="status" id="status_{{ order.id }}"  >
-                                                {% for status, _ in order.ORDER_STATUS_CHOICES %}
-                                                    <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
-                                                {% endfor %}
-                                            </select>
-                                            <input type="hidden" name="orderId" value="{{ order.id }}">
-                                            <button type="submit">Update Status</button>
-                                        </form>
-                                    </td>
-                                    
-                                    <td>{{ order.created }}</td>
-                                    
-                                    <td>{{ order.billing_status }}</td>
-                                    <td>₹{{ order.total_paid }}</td>
-                                    <td><a class="btn btn-Primary" href="{% url 'order_details' order.id %}">View</a></td>
+                                    <td colspan="7">No orders found.</td>
                                 </tr>
-                            {% endfor %}
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -53,38 +74,37 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<!-- <script>
-    // Load the saved order status from local storage on page load
+<script>
     $(document).ready(function () {
-        {% for order in orders %}
-            var savedStatus_{{ order.id }} = localStorage.getItem('orderStatus_{{ order.id }}');
-            if (savedStatus_{{ order.id }}) {
-                $('#status_{{ order.id }}').val(savedStatus_{{ order.id }});
-            }
-        {% endfor %}
-    });
+        // Add filtering based on search input and order status
+        $('#searchInput, #orderStatusFilter').on('input change', function () {
+            var searchText = $('#searchInput').val().toLowerCase();
+            var selectedOrderStatus = $('#orderStatusFilter').val();
 
-    function updateStatus(orderId, selectedStatus) {
-        // Add your logic here to handle the selected status value
-        console.log("Order ID:", orderId);
-        console.log("Selected Status:", selectedStatus);
+            $('tbody tr').each(function () {
+                var customerName = $(this).data('customer-name').toLowerCase();
+                var orderStatus = $(this).data('order-status');
 
-        // Save the selected status to local storage
-        localStorage.setItem('orderStatus_' + orderId, selectedStatus);
+                var matchSearch = customerName.includes(searchText) || searchText === '';
+                var matchOrderStatus = selectedOrderStatus === '' || orderStatus === selectedOrderStatus;
 
-        // Make an AJAX request to update the order status on the server
-        $.ajax({
-            url: '/update-order-status/',  // Update this URL with your actual endpoint
-            method: 'POST',
-            data: { orderId: orderId, status: selectedStatus },
-            success: function(response) {
-                console.log(response);
-            },
-            error: function(error) {
-                console.error(error);
+                if (matchSearch && matchOrderStatus) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            // Show/hide the "No orders found" message based on the number of visible rows
+            var visibleRows = $('tbody tr:visible').length;
+            
+            if (visibleRows === 0) {
+                $('tbody tr.no-orders-message').show();
+            } else {
+                $('tbody tr.no-orders-message').hide();
             }
         });
-    }
-</script> -->
+    });
+</script>
 
 {% endblock %}

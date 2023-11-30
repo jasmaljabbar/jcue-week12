@@ -234,12 +234,7 @@ def edt_brand_action(request):
             brand.save()
             return redirect("show_brand")
 
-# def show_variant(request):
-#     if request.user.is_authenticated:
-#         variant = Variant.objects.all()
-#         return render(request,"admin/show_variant.html")
-#     else:
-#         return redirect("home")
+
 
 @never_cache
 def show_product(request):

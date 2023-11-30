@@ -17,6 +17,7 @@ from django.contrib.auth.decorators import login_required
 from admin_sid.models import *
 from basket.models import Cart, CartItem , WishItem
 from .models import Wallet, Wallet_History
+from django.http import JsonResponse
 
 # Create your views here.
 
@@ -284,6 +285,32 @@ def edit_profileaction(request):
         return redirect("userprofile")
 
     return redirect("edit_profile")
+
+
+
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password = request.POST.get('new_password')
+
+        user = authenticate(username=request.user.username, password=old_password)
+        
+        if user is not None:
+        
+            user.set_password(new_password)
+            user.save()
+
+            login(request, user)
+
+            return JsonResponse({'message': 'Password changed successfully.'})
+        else:
+
+            return JsonResponse({'message': 'Incorrect old password.'}, status=400)
+
+    return JsonResponse({'message': 'Invalid request.'}, status=400)
+
 
 
 @login_required

@@ -23,6 +23,7 @@ urlpatterns = [
     path('remove_coupon', views.remove_coupon, name='remove_coupon'),    
     path('edit_profile', views.edit_profile, name='edit_profile'),  
     path('edit_profileaction', views.edit_profileaction, name='edit_profileaction'), 
+    path('change_password/',views.change_password, name='change_password'),
     path('wallet/', views.view_wallet, name='view_wallet'),
     path('wallet/add/', views.add_funds, name='add_funds'),
     path('log_out', views.log_out, name='log_out'),
