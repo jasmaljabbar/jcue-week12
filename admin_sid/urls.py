@@ -6,6 +6,8 @@ from . import views
 urlpatterns = [
     
     path("admin_dsh",views.admin_dsh,name='admin_dsh'),
+    path("dashboard",views.dashboard,name='dashboard'),
+    path('generate-pdf/',views.generate_pdf, name='generate_pdf'),
     path("banner",views.banner,name='banner'),
     path("add_banner",views.add_banner,name='add_banner'),
     path("add_banner_action",views.add_banner_action,name='add_banner_action'),

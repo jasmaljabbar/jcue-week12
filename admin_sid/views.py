@@ -1,3 +1,4 @@
+import calendar
 from django.shortcuts import get_object_or_404, render, redirect
 from decimal import Decimal
 from orders.models import Order, OrderItem
@@ -14,10 +15,19 @@ from django.contrib import messages
 from django.http import HttpResponse
 from .forms import AdminReturnResponseForm
 from .models import Coupon,Banner
+from django.db.models import Count, Q, Sum
+from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from .forms import CouponForm
 from .forms import EditCouponForm
 from .forms import ReturnReasonForm
 from orders.models import Order, ReturnRequest
+from django.db.models import Count, Avg
+from django.db.models.functions import ExtractMonth
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
+
 
 
 # Create your views here.
@@ -27,6 +37,162 @@ def admin_dsh(request):
         return render(request, "admin/admin_dsh.html")
     else:
         return redirect("home")
+
+# def dashboard(request):
+#     order_list = Order.objects.filter(status="delivered")
+#     orders = Order.objects.annotate(month=ExtractMonth("updated")).values("month").annotate(count=Count("id")).values("month","count")
+#     month_list = []
+#     total_orders = []
+
+#     for o in orders:
+#         month_list.append(calendar.month_name[o["month"]])
+#         total_orders.append(o["count"])
+#     context = {
+#         "orders" : orders,
+#         "month" : month_list,
+#         "total_orders" : total_orders,
+#     }
+#     return render(request,'admin/dashboard.html',context)
+
+# @login_required
+# @staff_member_required
+def dashboard(request):
+    active_users = User.objects.filter(is_active=True).exclude(is_superuser=True)
+    total_active_users_count = active_users.count()
+    products = Product.objects.filter(best_sellers__gt=0).order_by('-best_sellers')
+    # Monthly sales data
+    orders_month_report = (
+        Order.objects.annotate(month=ExtractMonth("created"))
+        .values("month")
+        .annotate(monthly_orders_count=Count("id"))
+        .annotate(monthly_sales=Sum("total_paid"))
+        .values("month", "monthly_orders_count", "monthly_sales")
+    )
+    month = []
+    total_orders_per_month = []
+    total_sales_per_month = []
+
+    for order in orders_month_report:
+        month.append(calendar.month_name[order["month"]])
+        total_orders_per_month.append(order["monthly_orders_count"])
+        total_sales_per_month.append(order["monthly_sales"])
+
+    # Daily sales data
+    current_month = timezone.now().month
+    current_year = timezone.now().year
+    orders_daily_report = (
+        Order.objects.filter(billing_status='bank')  # Adjust the status filter as needed
+        .filter(created__month=current_month, created__year=current_year)
+        .annotate(day=ExtractDay("created"))
+        .values("day")
+        .annotate(daily_orders_count=Count("id"))
+        .annotate(daily_sales=Sum("total_paid"))
+        .values("day", "daily_orders_count", "daily_sales")
+)
+
+    day = []
+    total_orders_per_day = []
+    total_sales_per_day = []
+
+    for order in orders_daily_report:
+        day.append(order["day"])
+        total_orders_per_day.append(order["daily_orders_count"])
+        total_sales_per_day.append(order["daily_sales"])
+
+    # Yearly sales count
+    orders_year_report = (
+        Order.objects.annotate(year=ExtractYear("created"))
+        .values("year")
+        .annotate(yearly_orders_count=Count("id"))
+        .annotate(yearly_sales=Sum("total_paid"))
+        .values("year", "yearly_orders_count", "yearly_sales")
+    )
+    year = []
+    total_orders_per_year = []
+    total_sales_per_year = []
+
+    for order in orders_year_report:
+        year.append(order["year"])
+        total_orders_per_year.append(order["yearly_orders_count"])
+        total_sales_per_year.append(order["yearly_sales"])
+
+    orders = Order.objects.filter(Q(status='delivered')|Q(billing_status='bank'))
+    balance = Order.objects.filter(status='delivered').aggregate(
+        total_sales=Sum("total_paid")
+    )
+    
+    
+    product_data = []
+    for product in products:
+        total_quantity_sold = OrderItem.objects.filter(product=product).aggregate(Sum('quantity'))['quantity__sum'] or 0
+        total_income = total_quantity_sold * product.price
+        product_data.append({
+            'product': product,
+            'total_quantity_sold': total_quantity_sold,
+            'total_income': total_income,
+        })
+        
+    
+    total_income = Order.objects.filter(Q(billing_status='bank')|Q(status='delivered')).aggregate(total_income=Sum('total_paid'))['total_income'] or 0
+    total_orders_count = Order.objects.count()
+    order_items = Order.objects.aggregate(order_sum=Sum("total_paid"))
+    context = {
+        'product_data': product_data,
+        "total_active_users_count": total_active_users_count,
+        "total_orders_count": total_orders_count,
+        "total_income": total_income,
+        "orders": orders,
+        "balance": balance,
+        "sales": order_items,
+        "month": month,
+        "total_orders_per_month": total_orders_per_month,
+        "total_sales_per_month": total_sales_per_month,
+        "day": day,
+        "total_orders_per_day": total_orders_per_day,
+        "total_sales_per_day": total_sales_per_day,
+        "year": year,
+        "total_orders_per_year": total_orders_per_year,
+        "total_sales_per_year": total_sales_per_year,
+    }
+    return render(request,'admin/dashboard.html',context)
+
+
+def generate_pdf(request):
+    # Create a PDF file
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+
+    # Your table data
+    orders = Order.objects.all()
+
+    # Set up the PDF table headers
+    headers = ["Customer", "CONTACT", "DATE", "ADDRESS", "Total Paid"]
+    col_widths = [pdf.stringWidth(header, "Helvetica", 10) for header in headers]
+    table_width = sum(col_widths)
+    table_start_x = (letter[0] - table_width) / 2
+    y_position = 750
+
+    # Write headers to PDF
+    for i, header in enumerate(headers):
+        pdf.drawString(table_start_x + sum(col_widths[:i]), y_position, header)
+
+    # Write data to PDF
+    for order in orders:
+        y_position -= 20
+        pdf.drawString(table_start_x, y_position, order.full_name)
+        pdf.drawString(table_start_x + col_widths[0], y_position, order.phone)
+        pdf.drawString(table_start_x + col_widths[0] + col_widths[1], y_position, str(order.created))
+        pdf.drawString(table_start_x + col_widths[0] + col_widths[1] + col_widths[2], y_position, order.address1)
+        pdf.drawString(table_start_x + col_widths[0] + col_widths[1] + col_widths[2] + col_widths[3], y_position, str(order.total_paid))
+
+    pdf.save()
+
+    # File response with the PDF content
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="orders.pdf"'
+    return response
+
 
 
 def banner(request):
