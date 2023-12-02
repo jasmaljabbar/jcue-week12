@@ -14,7 +14,9 @@ from acount.models import  Wallet,Wallet_History
 from django.contrib import messages
 from django.http import HttpResponse
 from .forms import AdminReturnResponseForm
-from .models import Coupon,Banner
+from .models import Coupon,Banner, ProductOffer
+from django.db import IntegrityError
+from django.http import JsonResponse
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from .forms import CouponForm
@@ -27,6 +29,13 @@ from django.http import HttpResponse
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from io import BytesIO
+from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
+from django.views.decorators.csrf import csrf_protect
+from django.db import transaction
+from datetime import datetime, timedelta
+
 
 
 
@@ -157,41 +166,48 @@ def dashboard(request):
     return render(request,'admin/dashboard.html',context)
 
 
+
+
 def generate_pdf(request):
-    # Create a PDF file
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
-
-    # Your table data
     orders = Order.objects.all()
 
-    # Set up the PDF table headers
-    headers = ["Customer", "CONTACT", "DATE", "ADDRESS", "Total Paid"]
-    col_widths = [pdf.stringWidth(header, "Helvetica", 10) for header in headers]
-    table_width = sum(col_widths)
-    table_start_x = (letter[0] - table_width) / 2
+   
+    headers = ["Customer", "CONTACT", "DATE", "Total Paid"]
+    col_widths = [pdf.stringWidth(header, "Helvetica", 25) for header in headers]
+
+
+    col_widths[2] += 20  
+
+
+    line_height = 34
+
+    
+    table_start_x = 100  
     y_position = 750
 
-    # Write headers to PDF
     for i, header in enumerate(headers):
-        pdf.drawString(table_start_x + sum(col_widths[:i]), y_position, header)
+        pdf.drawString(table_start_x + sum(col_widths[:i]), y_position - line_height, header)
 
-    # Write data to PDF
     for order in orders:
-        y_position -= 20
-        pdf.drawString(table_start_x, y_position, order.full_name)
-        pdf.drawString(table_start_x + col_widths[0], y_position, order.phone)
-        pdf.drawString(table_start_x + col_widths[0] + col_widths[1], y_position, str(order.created))
-        pdf.drawString(table_start_x + col_widths[0] + col_widths[1] + col_widths[2], y_position, order.address1)
-        pdf.drawString(table_start_x + col_widths[0] + col_widths[1] + col_widths[2] + col_widths[3], y_position, str(order.total_paid))
+        y_position -= line_height
+        for i, value in enumerate([order.full_name, order.phone, order.created.strftime('%Y-%m-%d'), str(order.total_paid)]):
+           
+            if i == 2:
+                pdf.setFont("Helvetica", 8)
+                pdf.drawString(table_start_x + sum(col_widths[:i]), y_position - line_height, value)
+                pdf.setFont("Helvetica", 10)  # Resetting the font size to the default
+            else:
+                pdf.drawString(table_start_x + sum(col_widths[:i]), y_position - line_height, str(value))
 
     pdf.save()
 
-    # File response with the PDF content
     buffer.seek(0)
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="orders.pdf"'
     return response
+
 
 
 
@@ -625,6 +641,105 @@ def order_details(request, oid):
     return render(request, "admin/order_details.html", {"orders": orders, 'return_request': return_request})
 
 
+def category_offer(request):
+    category_data = Category.objects.all()
+    offer_data = ProductOffer.objects.all()
+
+    return render(request, 'admin/category_offer.html', {'categoryData': category_data, 'offerData': offer_data})
+
+
+
+@require_POST
+@csrf_protect
+@csrf_exempt
+def add_category_offer(request):
+    try:
+        category_id = request.POST.get('category')
+        discount_type = request.POST.get('discountType')
+        percentage = request.POST.get('percentage')
+        start_date_str = request.POST.get('startDate')
+        end_date_str = request.POST.get('endDate')
+
+        category = Category.objects.get(id=category_id)
+
+        # Convert string dates to datetime objects
+        start_date_naive = datetime.strptime(start_date_str, '%Y-%m-%d')
+        end_date_naive = datetime.strptime(end_date_str, '%Y-%m-%d')
+
+        # Make the datetimes timezone aware
+        start_date = timezone.make_aware(start_date_naive, timezone.get_current_timezone())
+        end_date = timezone.make_aware(end_date_naive, timezone.get_current_timezone())
+
+        # Check if an active offer already exists for the category
+        existing_offer = ProductOffer.objects.filter(category=category, expire_date__gt=timezone.now()).first()
+        if existing_offer:
+            raise ValueError("An active offer already exists for this category. Please update the existing offer or choose a different category.")
+
+        # Check if the offer is still valid
+        offer = ProductOffer(
+            category=category,
+            discount_type=discount_type,
+            discount_value=percentage,
+            start_date=start_date,
+            expire_date=end_date
+        )
+        if discount_type != 'fixed' and int(percentage) > 99:
+             raise ValueError("Percentage is up to 99")
+        if not offer.is_valid_for_category():
+            raise ValueError("Category offer is not valid.")
+
+        with transaction.atomic():
+            # Create the category offer
+            offer.save()
+
+            # Update discount_price for all products in the category
+            products = Product.objects.filter(category=category)
+            
+            for product in products:
+                if discount_type == 'fixed':
+                    product.discount_price = product.old_price
+                    product.old_price = product.price
+                    percentage = Decimal(str(percentage))  # Convert to Decimal
+                    product.price = product.price - percentage
+                else:
+                    product.discount_price = product.old_price
+                    product.old_price = product.price
+                    percentage = Decimal(str(percentage))  # Convert to Decimal
+                    product.price = product.price - (percentage / 100) * product.price
+                
+                product.save()
+
+        response_data = {'success': True, 'message': 'Category offer added successfully'}
+    except ObjectDoesNotExist as e:
+        print(f"ObjectDoesNotExist: {e}")
+        response_data = {'success': False, 'message': 'Invalid category ID'}
+    except IntegrityError:
+        response_data = {'success': False, 'message': 'An offer for this category already exists'}
+    except ValueError as e:
+        response_data = {'success': False, 'message': str(e)}
+    except Exception as e:
+        response_data = {'success': False, 'message': str(e)}
+
+    return JsonResponse(response_data)
+
+
+
+
+
+@require_http_methods(['DELETE'])
+@csrf_exempt
+def delete_category_offer(request, offer_id):
+    try:
+        offer = ProductOffer.objects.get(id=offer_id)
+        offer.delete()
+
+        response_data = {'success': True, 'message': 'Category offer deleted successfully'}
+    except ObjectDoesNotExist:
+        response_data = {'success': False, 'message': 'Invalid offer ID'}
+    except Exception as e:
+        response_data = {'success': False, 'message': str(e)}
+
+    return JsonResponse(response_data)
 
 def coupon_admin(request):
     coupons = Coupon.objects.all()
@@ -641,7 +756,6 @@ def manage_coupons(request):
     if request.method == 'POST':
         form = CouponForm(request.POST)
         if form.is_valid():
-            print('yes it works')
             form.save()
             return redirect('manage_coupons')
         else:

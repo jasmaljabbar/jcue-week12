@@ -21,6 +21,9 @@ from django.http import JsonResponse
 
 # Create your views here.
 
+from django.utils import timezone
+
+
 def home(request):
     user = request.user
     product = Product.objects.all()[:12]
@@ -28,17 +31,21 @@ def home(request):
     best_sellers = Product.objects.filter(active=True).order_by('-best_sellers')[:4]
 
     for p in product:
-        if user.is_authenticated:
-            p.in_basket = CartItem.objects.filter(user=user, product=p).exists()
-            p.in_wishlist_count = WishItem.objects.filter(user=user, product=p).exists()
-        else:
-            p.in_basket = False
-            p.in_wishlist_count = False
+        try:
+            category_offers = ProductOffer.objects.filter(category=p.category)
 
-    for best_seller in best_sellers:
-        if user.is_authenticated:
-            best_seller.in_basket = CartItem.objects.filter(user=user, product=best_seller).exists()
-            best_seller.in_wishlist_count = WishItem.objects.filter(user=user, product=best_seller).exists()
+            if category_offers.exists():
+                # Assuming you want to take the first offer
+                category_offer = category_offers.first()
+
+                if not category_offer.is_valid_for_category():
+                    p.price = p.old_price
+                    p.old_price = p.discount_price
+                    p.discount_price = 0
+                    p.save()
+        except ProductOffer.DoesNotExist:
+            # No category offer found, handle accordingly
+            pass
 
     return render(request, "app/home.html", {"product": product, 'active_banners': active_banners, 'best_sellers': best_sellers})
 
@@ -167,7 +174,6 @@ def login_perform(request):
 
 @never_cache
 def home_perform(request):
-    # Your view logic for the home page here
     if not request.user.is_authenticated:
         return render(request, "app/userlogin.html")
     else:
@@ -213,6 +219,7 @@ def price_filter(request):
                 return render(request, "app/error_page.html", {'error_message': error_message})
 
             # Filter products based on price range
+            
             product = Product.objects.filter(
                 Q(price__gte=min_price) & Q(price__lte=max_price)
             ).exclude(active=False)

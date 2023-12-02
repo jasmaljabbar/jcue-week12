@@ -32,6 +32,7 @@ class Product(models.Model):
     image4 = models.ImageField(upload_to='prodents', null=True)
     active = models.BooleanField(default=True)
     description = models.TextField()
+    discount_price = models.DecimalField(max_digits=99999, decimal_places=2, default=0)
     price = models.DecimalField(max_digits=99999, decimal_places=2)
     old_price = models.DecimalField(max_digits=99999, decimal_places=2)
     stock = models.IntegerField()
@@ -43,7 +44,7 @@ class Product(models.Model):
 best_sellers = Product.objects.filter(active=True).order_by('-best_sellers')[:4]
 
 class Coupon(models.Model):
-    PUBLIC = 'public'
+    PUBLIC = 'public'   
     PRIVATE = 'private'
     COUPON_TYPE_CHOICES = [
         (PUBLIC, 'Public'),
@@ -109,6 +110,43 @@ class Coupon(models.Model):
     class Meta:
         verbose_name = 'Coupon'
         verbose_name_plural = 'Coupons'
+
+
+class ProductOffer(models.Model):
+    PERCENTAGE = 'percentage'
+    FIXED = 'fixed'
+    DISCOUNT_TYPE_CHOICES = [
+        (PERCENTAGE, 'Percentage'),
+        (FIXED, 'Fixed'),
+    ]
+
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default=FIXED)
+    discount_value = models.DecimalField(max_digits=5, decimal_places=2)
+    start_date = models.DateTimeField(default=timezone.now, blank=True)
+    expire_date = models.DateTimeField()
+
+    def is_valid_for_category(self):
+        time_now = timezone.now() + timedelta(hours=5, minutes=30)
+        return self.start_date <= time_now <= self.expire_date
+
+    # def calculate_discount(self, price):
+    #     """
+    #     Calculate the discount amount based on the offer type and value.
+    #     """
+    #     if self.discount_type == self.PERCENTAGE:
+    #         return (self.discount_value / 100) * price
+    #     elif self.discount_type == self.FIXED:
+    #         return min(self.discount_value, total_amount)
+    #     else:
+    #         return 0  # No discount if the type is not recognized
+
+    def __str__(self):
+        return f"{self.category} Offer"
+
+    class Meta:
+        verbose_name = 'Product Offer'
+        verbose_name_plural = 'Product Offers'
 
 
 

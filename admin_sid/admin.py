@@ -1,11 +1,12 @@
 from django.contrib import admin
-from .models import Category, Brand, Product, Coupon, Banner
+from .models import Category, Brand, Product, Coupon, Banner, ProductOffer
 
 
 admin.site.register(Category)
 admin.site.register(Brand)
 admin.site.register(Product)
 admin.site.register(Banner)
+admin.site.register(ProductOffer)
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
