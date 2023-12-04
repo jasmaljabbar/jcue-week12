@@ -1,18 +1,20 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 
 urlpatterns = [
     
-    path("admin_dsh",views.admin_dsh,name='admin_dsh'),
-    path("dashboard",views.dashboard,name='dashboard'),
+    
+    path("/",views.dashboard,name='dashboard'),
     path('generate-pdf/',views.generate_pdf, name='generate_pdf'),
     path("banner",views.banner,name='banner'),
     path("add_banner",views.add_banner,name='add_banner'),
     path("add_banner_action",views.add_banner_action,name='add_banner_action'),
-    path("edit_banner/<int:bid>",views.edit_banner,name='edit_banner'),
-    path("edt_banner_action",views.edt_banner_action,name='edt_banner_action'),
+    path('edt_banner_action/', views.edt_banner_action, name='edt_banner_action'),
+    path('edit_banner/<int:bid>/', views.edit_banner, name='edit_banner'),
     path("banner_action/<int:bid>",views.banner_action,name='banner_action'),
     path("show_category",views.show_category,name='show_category'),
     path("add_category",views.add_category,name='add_category'),
@@ -34,7 +36,7 @@ urlpatterns = [
     path("show_user",views.show_user,name='show_user'),
     path('customeraction/<int:uid>/', views.customeraction, name='customeraction'),
     path('product_action/<int:uid>/', views.product_action, name='product_action'),
-    path('add_product_action', views.add_product_action, name='add_product_action'),
+    
     path('order', views.order, name='order'),
     path('admin/category_offer/', views.category_offer, name='category_offer'),
     path('admin/add_category_offer/', views.add_category_offer, name='add_category_offer'),
@@ -49,4 +51,4 @@ urlpatterns = [
     path('admin_sid/handle_return_request/<int:request_id>/', views.handle_return_request, name='handle_return_request'),
  
     
-]
+]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

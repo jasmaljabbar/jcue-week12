@@ -160,46 +160,58 @@ Products
     <div class="row">
       {% if product %}
       {% for p in product %}
-      {% if p.active %}
-      <div class="col-md-3 col-sm-6 mb-4">
-        <div class="product-card">
-          <div class="product-img">
-            {% if p.in_wishlist_count %}
-            <a href="{% url 'basket:add_to_wishlist' p.id %}">
-              <i class="fas fa-heart wishlist-icon " style="color: red;"></i>
-            </a>
-            {% else %}
-            <a href="{% url 'basket:add_to_wishlist' p.id %}">
-              <i class="fas fa-heart wishlist-icon"></i>
-            </a>
+    {% if p.active %}
+    <div class="col-md-3 col-sm-6 mb-4">
+      <div class="product-card">
+        <div class="product-img">
+          {% if p.in_wishlist_count %}
+
+          <a href="{% url 'basket:add_to_wishlist' p.id %}">
+
+
+            <i class="fas fa-heart wishlist-icon " style="color: red;"></i>
+          </a>
+          {% else %}
+          {% if request.user.is_authenticated %}
+          <a href="{% url 'basket:add_to_wishlist' p.id %}">
             {% endif %}
-            <a href="{% url 'view_product' p.id %}">
-              <img src="{{ p.image1.url }}" class="card-img-top" alt="{{ p.name }}">
-            </a>
-          </div>
-          <div class="product-details">
-            <h4>{{ p.title }}</h4>
-            {% if p.stock > 0 %}
+            <i class="fas fa-heart wishlist-icon"></i>
+          </a>
+          {% endif %}
+          <a href="{% url 'view_product' p.id %}">
+            <img src="{{ p.image1.url }}" class="card-img-top" alt="{{ p.name }}">
+          </a>
+        </div>
+        <div class="product-details">
+          {% if p.old_price %}
+            <p class="text-capitalize">
+              ₹ {{ p.price }} <del><small>₹{{ p.old_price }}</small></del>
+            </p>
+          {% else %}
+            <p class="text-capitalize">₹ {{ p.price }}</p>
+          {% endif %}
+          <h4>{{ p.title }}</h4>
+          {% if p.stock > 0 %}
             <div class="product-cart">
               {% if p.in_basket %}
-              <a href="{% url 'basket:basket_summary' %}">
-                <button type="button" class="btn btn-primary">Go to Cart</button>
-              </a>
+                <a href="{% url 'basket:basket_summary' %}">
+                  <button type="button" class="btn btn-primary">Go to Cart</button>
+                </a>
               {% else %}
-              <button type="button" class="add-to-cart-button btn btn-primary" data-productid="{{ p.id }}">Add to
-                Cart</button>
+                <button type="button" class="add-to-cart-button btn btn-primary" data-productid="{{ p.id }}">Add to Cart</button>
               {% endif %}
             </div>
-            {% else %}
+          {% else %}
             <div class="product-cart">
               <button class="btn-danger">Out of Stock</button>
             </div>
-            {% endif %}
-          </div>
+          {% endif %}
         </div>
+        
       </div>
-      {% endif %}
-      {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
       {% else %}
       <!-- Your code for when product is empty -->
       <div class="col-md-12">

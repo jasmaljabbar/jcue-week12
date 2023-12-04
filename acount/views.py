@@ -18,10 +18,11 @@ from admin_sid.models import *
 from basket.models import Cart, CartItem , WishItem
 from .models import Wallet, Wallet_History
 from django.http import JsonResponse
-
+from .forms import UserProfileForm
 # Create your views here.
 
-from django.utils import timezone
+from django.contrib.auth.hashers import check_password
+
 
 
 def home(request):
@@ -155,7 +156,7 @@ def login_perform(request):
                 if user is not None:
                     if user.is_superuser:
                         login(request, user)
-                        return redirect("admin_dsh")
+                        return redirect("dashboard")
                     else:
                         login(request, user)
                         return redirect("home")
@@ -251,47 +252,26 @@ def userprofile(request):
         return redirect("home")
 
 
+
+
+
 @login_required
 def edit_profile(request):
-    if request.user.is_authenticated:
-        try:
-            user_profile = User_profile.objects.get(user=request.user)
-        except User_profile.DoesNotExist:
-            user_profile = User_profile.objects.create(user=request.user)
+    user_profile = User_profile.objects.get_or_create(user=request.user)[0]
+    form = UserProfileForm(instance=user_profile)
 
-        return render(request, "app/edit_profile.html", {"user_profile": user_profile})
-    else:
-        return redirect("home")
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully')
+            return redirect('userprofile')
+        else:
+            messages.error(request, 'Error updating profile. Please correct the errors.')
+
+    return render(request, 'app/edit_profile.html', {'form': form, 'user_profile': user_profile})
 
 
-@login_required
-def edit_profileaction(request):
-    user_profile = User_profile.objects.get(user=request.user)
-    if request.method == "POST":
-        user = request.user
-        profile_photo = request.FILES.get("photo")
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        phone_number = request.POST.get("phone_number")
-        address = request.POST.get("address")
-        # Check if a new profile photo is provided
-        if profile_photo:
-            user_profile.profil_photo = (
-                profile_photo  # Update the photo only if a new one is provided
-            )
-
-        user_profile.phone_number = phone_number
-        user_profile.address = address
-
-        user.username = username
-        user.email = email
-        user.save()
-
-        user_profile.save()
-
-        return redirect("userprofile")
-
-    return redirect("edit_profile")
 
 
 
@@ -302,19 +282,28 @@ def change_password(request):
         old_password = request.POST.get('old_password')
         new_password = request.POST.get('new_password')
 
-        user = authenticate(username=request.user.username, password=old_password)
-        
+        # Check if the old password matches the current password
+        if not check_password(old_password, request.user.password):
+            return JsonResponse({'message': 'Incorrect old password.'}, status=400)
+
+        # Check if the new password contains spaces
+        if ' ' in new_password:
+            return JsonResponse({'message': 'New password cannot contain spaces.'}, status=400)
+
+        # Add additional password validation rules if needed
+        # For example, you can check for minimum length or complexity requirements
+
+        # Update the user's password
+        request.user.set_password(new_password)
+        request.user.save()
+
+        # Authenticate the user with the new password
+        user = authenticate(username=request.user.username, password=new_password)
         if user is not None:
-        
-            user.set_password(new_password)
-            user.save()
-
             login(request, user)
-
             return JsonResponse({'message': 'Password changed successfully.'})
         else:
-
-            return JsonResponse({'message': 'Incorrect old password.'}, status=400)
+            return JsonResponse({'message': 'Error authenticating user with new password.'}, status=400)
 
     return JsonResponse({'message': 'Invalid request.'}, status=400)
 

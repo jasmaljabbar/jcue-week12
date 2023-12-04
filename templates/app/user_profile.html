@@ -22,7 +22,7 @@ User Profile
         {% endif %}
         <div class="card-body">
           <h5 class="card-title">User Information</h5>
-          <p><strong>Name:</strong> {{ request.user.username }}</p>
+          <p><strong>Name:</strong> {{ request.user.userprofile.name }}</p>
           <p><strong>Email:</strong> {{ request.user.email }}</p>
           <p><strong>Phone Number:</strong> {{ request.user.userprofile.phone_number }}</p>
           <p><strong>Address:</strong> {{ request.user.userprofile.address }}</p>
@@ -111,40 +111,40 @@ User Profile
 </div>
 <!-- Add this script at the end of your template -->
 <script>
-  
+
   function changePassword() {
-      // Get values from the form
-      var oldPassword = document.getElementById("old-password").value;
-      var newPassword = document.getElementById("new-password").value;
-      var confirmPassword = document.getElementById("confirm-password").value;
+    // Get values from the form
+    var oldPassword = document.getElementById("old-password").value;
+    var newPassword = document.getElementById("new-password").value;
+    var confirmPassword = document.getElementById("confirm-password").value;
 
-      if (newPassword !== confirmPassword) {
-          document.getElementById("password-warning").innerText = "Passwords do not match.";
-          return;
+    if (newPassword !== confirmPassword) {
+      document.getElementById("password-warning").innerText = "Passwords do not match.";
+      return;
+    }
+
+    document.getElementById("password-warning").innerText = "";
+
+
+    $.ajax({
+      type: 'POST',
+      url: '{% url "change_password" %}',
+      data: {
+        old_password: oldPassword,
+        new_password: newPassword,
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      },
+      success: function (response) {
+
+        alert("Password changed successfully!");
+        // Close the modal
+        $('#changePasswordModal').modal('hide');
+      },
+      error: function (xhr, errmsg, err) {
+
+        alert("Error changing password. Please try again.");
       }
-
-      document.getElementById("password-warning").innerText = "";
-
-    
-      $.ajax({
-          type: 'POST',
-          url: '{% url "change_password" %}', 
-          data: {
-              old_password: oldPassword,
-              new_password: newPassword,
-              csrfmiddlewaretoken: "{{ csrf_token }}",
-          },
-          success: function (response) {
-             
-              alert("Password changed successfully!");
-              // Close the modal
-              $('#changePasswordModal').modal('hide');
-          },
-          error: function (xhr, errmsg, err) {
-             
-              alert("Error changing password. Please try again.");
-          }
-      });
+    });
   }
 </script>
 

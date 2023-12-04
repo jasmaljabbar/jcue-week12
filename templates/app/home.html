@@ -271,11 +271,8 @@ Home
       <div class="product-card">
         <div class="product-img">
           {% if p.in_wishlist_count %}
-
           <a href="{% url 'basket:add_to_wishlist' p.id %}">
-
-
-            <i class="fas fa-heart wishlist-icon " style="color: red;"></i>
+            <i class="fas fa-heart wishlist-icon" style="color: red;"></i>
           </a>
           {% else %}
           {% if request.user.is_authenticated %}
@@ -284,11 +281,19 @@ Home
             <i class="fas fa-heart wishlist-icon"></i>
           </a>
           {% endif %}
+
           <a href="{% url 'view_product' p.id %}">
             <img src="{{ p.image1.url }}" class="card-img-top" alt="{{ p.name }}">
           </a>
         </div>
         <div class="product-details">
+          {% if p.old_price %}
+          <p class="text-capitalize">
+            ₹ {{ p.price }} <del><small>₹{{ p.old_price }}</small></del>
+          </p>
+          {% else %}
+          <p class="text-capitalize">₹ {{ p.price }}</p>
+          {% endif %}
           <h4>{{ p.title }}</h4>
           {% if p.stock > 0 %}
           <div class="product-cart">
@@ -301,12 +306,14 @@ Home
               Cart</button>
             {% endif %}
           </div>
+
           {% else %}
           <div class="product-cart">
             <button class="btn-danger">Out of Stock</button>
           </div>
           {% endif %}
         </div>
+
       </div>
     </div>
     {% endif %}
@@ -325,25 +332,26 @@ Home
 
     $(".add-to-cart-button").click(function () {
       var productId = $(this).data("productid");
-
+  
       $.ajax({
-        type: 'POST',
-        url: '{% url "basket:basket_add" %}',
-        data: {
-          productid: productId,
-          productqty: 1,
-          csrfmiddlewaretoken: "{{csrf_token}}",
-          action: 'post'
-        },
-        success: function (json) {
-          window.location.reload();
-          document.getElementById("basket-qty").innerHTML = json.qty;
-        },
-        error: function (xhr, errmsg, err) {
-          // Handle error if needed
-        }
+          type: 'POST',
+          url: '{% url "basket:basket_add" %}',
+          data: {
+              productid: productId,
+              productqty: 1,
+              csrfmiddlewaretoken: "{{csrf_token}}",
+              action: 'post'
+          },
+          success: function (json) {
+              window.location.reload();
+              document.getElementById("basket-qty").innerHTML = json.qty;
+          },
+          error: function (xhr, errmsg, err) {
+              // Handle error if needed
+          }
       });
-    });
+  });
+  
   });
 </script>
 

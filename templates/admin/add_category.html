@@ -1,4 +1,5 @@
 {% extends "admin/admin_dsh.html" %}
+{% load crispy_forms_tags %}
 {% block main %}
 <div class="container">
     <h1>Add New Category</h1>
@@ -6,19 +7,23 @@
     <form method="post" action="{% url 'add_category_action' %}" class="border border-dark rounded p-4" enctype="multipart/form-data">
         
         {% csrf_token %}
-
-        <div class="form-group">
-            <label for="new_category">New Category</label>
-            <input type="text" name="new_category" class="form-control" required>
-        </div>
-        <tr>
-            <th>Image </th>
-            <td><input type="file" name="img" class="form-control" required></td>
-        </tr>
+        {{ form|crispy }}
 
         <div class="text-right mt-3">
             <button type="submit" class="btn btn-success">Add Category</button>
         </div>
     </form>
 </div>
+<script>
+    {% if messages %}
+    document.addEventListener('DOMContentLoaded', function () {
+        {% for message in messages %}
+        Swal.fire({
+            icon: '{{ message.tags }}',
+            title: '{{ message }}',
+        });
+        {% endfor %}
+    });
+    {% endif %}
+</script>
 {% endblock main %}
