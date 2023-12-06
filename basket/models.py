@@ -15,31 +15,18 @@ class CartItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
 
-    def get_subtotal_price(self):
-        return sum(item.subtotal_price for item in self.items.all())
-
-    @property
     def subtotal_price(self):
-        print(
-            f"Calculating subtotal for {self.product.title}: Quantity: {self.quantity}, Price: {self.product.price}"
-        )
         return self.quantity * self.product.price
 
-
 class Cart(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     items = models.ManyToManyField(CartItem)
 
-    # Inside the Cart model
     def get_total_price(self):
-        subtotal = self.get_subtotal_price()
-        shipping_price = Decimal(str(self.get_shipping_price()))  # Convert to Decimal
-        total = subtotal + shipping_price
-        print(f"Cart total: {total}")
-        return total
+        return sum(item.subtotal_price() for item in self.items.all())
 
     def get_subtotal_price(self):
-        subtotal = sum(item.subtotal_price for item in self.items.all())
+        subtotal = sum(item.subtotal_price() for item in self.items.all())
         print(f"Calculated subtotal: {subtotal}")
         return subtotal
 

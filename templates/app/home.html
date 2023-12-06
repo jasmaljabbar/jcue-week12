@@ -36,6 +36,18 @@ Home
     font-family: 'Noto Sans JP', sans-serif;
   }
 
+  .badge {
+    position: absolute;
+    left: 0;
+    top: 20px;
+    text-transform: uppercase;
+    font-size: 13px;
+    font-weight: 700;
+    background: #6E6E6E;
+    color: #BCFD4C;
+    padding: 3px 10px;
+  }
+
   .image-container {
     display: flex;
     justify-content: center;
@@ -218,7 +230,7 @@ Home
           <div class="product_sale">
             <p>Best Sale</p>
           </div>
-          {% if best_seller.in_wishlist_count %}
+          {% if best_seller.id in user_wishlist %}
           <a href="{% url 'basket:add_to_wishlist' best_seller.id %}">
             <i class="fas fa-heart wishlist-icon " style="color: red;"></i>
           </a>
@@ -239,7 +251,7 @@ Home
           <div class="product-cart">
             {% if best_seller.stock > 0 %}
             <div class="product-cart">
-              {% if best_seller.in_basket %}
+              {% if best_seller.id|add:0 in user_basket %}
               <a href="{% url 'basket:basket_summary' %}">
                 <button type="button" class="btn btn-primary">Go to Cart</button>
               </a>
@@ -269,8 +281,13 @@ Home
     {% if p.active %}
     <div class="col-md-3 col-sm-6 mb-4">
       <div class="product-card">
+        <!-- {% if p.has_offer %}
+        <div class="badge">Offer!</div>
+        {% else %}
+        <div class="badge">No Offer</div>
+        {% endif %} -->
         <div class="product-img">
-          {% if p.in_wishlist_count %}
+          {% if p.id in user_wishlist %}
           <a href="{% url 'basket:add_to_wishlist' p.id %}">
             <i class="fas fa-heart wishlist-icon" style="color: red;"></i>
           </a>
@@ -297,7 +314,7 @@ Home
           <h4>{{ p.title }}</h4>
           {% if p.stock > 0 %}
           <div class="product-cart">
-            {% if p.in_basket %}
+            {% if p.id|add:0 in user_basket %}
             <a href="{% url 'basket:basket_summary' %}">
               <button type="button" class="btn btn-primary">Go to Cart</button>
             </a>
@@ -332,26 +349,26 @@ Home
 
     $(".add-to-cart-button").click(function () {
       var productId = $(this).data("productid");
-  
+
       $.ajax({
-          type: 'POST',
-          url: '{% url "basket:basket_add" %}',
-          data: {
-              productid: productId,
-              productqty: 1,
-              csrfmiddlewaretoken: "{{csrf_token}}",
-              action: 'post'
-          },
-          success: function (json) {
-              window.location.reload();
-              document.getElementById("basket-qty").innerHTML = json.qty;
-          },
-          error: function (xhr, errmsg, err) {
-              // Handle error if needed
-          }
+        type: 'POST',
+        url: '{% url "basket:basket_add" %}',
+        data: {
+          productid: productId,
+          productqty: 1,
+          csrfmiddlewaretoken: "{{csrf_token}}",
+          action: 'post'
+        },
+        success: function (json) {
+          window.location.reload();
+          document.getElementById("basket-qty").innerHTML = json.qty;
+        },
+        error: function (xhr, errmsg, err) {
+          // Handle error if needed
+        }
       });
-  });
-  
+    });
+
   });
 </script>
 

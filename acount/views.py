@@ -19,38 +19,74 @@ from basket.models import Cart, CartItem , WishItem
 from .models import Wallet, Wallet_History
 from django.http import JsonResponse
 from .forms import UserProfileForm
-# Create your views here.
 
 from django.contrib.auth.hashers import check_password
 
 
-
 def home(request):
-    user = request.user
     product = Product.objects.all()[:12]
     active_banners = Banner.objects.filter(is_active=True)
     best_sellers = Product.objects.filter(active=True).order_by('-best_sellers')[:4]
+    
+    user_basket = []
+    user_wishlist = []
+
+    if request.user.is_authenticated:
+        user_basket = CartItem.objects.filter(user=request.user).values_list('product__id', flat=True)
+        user_wishlist = WishItem.objects.filter(user=request.user).values_list('product__id', flat=True)
 
     for p in product:
         try:
             category_offers = ProductOffer.objects.filter(category=p.category)
 
             if category_offers.exists():
-                # Assuming you want to take the first offer
                 category_offer = category_offers.first()
 
                 if not category_offer.is_valid_for_category():
                     p.price = p.old_price
                     p.old_price = p.discount_price
                     p.discount_price = 0
+                    p.has_offer = True
                     p.save()
+                else:
+                    p.has_offer = False
+                    p.save()
+            else:
+                p.has_offer = False
+                p.save()
+
+            print(f"Product {p.id} has_offer: {p.has_offer}")
         except ProductOffer.DoesNotExist:
-            # No category offer found, handle accordingly
-            pass
-
-    return render(request, "app/home.html", {"product": product, 'active_banners': active_banners, 'best_sellers': best_sellers})
+            p.has_offer = False
+            p.save()
 
 
+    return render(request, "app/home.html", {
+        "product": product,
+        'active_banners': active_banners,
+        'best_sellers': best_sellers,
+        'user_basket': user_basket,
+        'user_wishlist': user_wishlist,
+    })
+
+
+def about_us(request):
+    return render(request, "app/about_us.html")
+
+def contact_us(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+
+
+       
+        print(f"Name: {name}, Email: {email}, Message: {message}")
+
+        
+        return render(request, "app/thank_you.html")
+
+    return render(request, "app/contact_us.html")
 
 
 def sign_up(request):
@@ -205,9 +241,9 @@ def search(request):
 
 
 def price_filter(request):
-    product = Product.objects.none()  # Initialize with an empty queryset
+    product = Product.objects.none() 
 
-    if request.method == "POST":  # Change this to GET if you are making a GET request
+    if request.method == "POST":  
         min_price = request.POST.get("min_price")
         max_price = request.POST.get("max_price")
 
@@ -219,7 +255,7 @@ def price_filter(request):
                 error_message = "Invalid price values"
                 return render(request, "app/error_page.html", {'error_message': error_message})
 
-            # Filter products based on price range
+      
             
             product = Product.objects.filter(
                 Q(price__gte=min_price) & Q(price__lte=max_price)
@@ -273,31 +309,22 @@ def edit_profile(request):
 
 
 
-
-
-
 @login_required
 def change_password(request):
     if request.method == 'POST':
         old_password = request.POST.get('old_password')
         new_password = request.POST.get('new_password')
 
-        # Check if the old password matches the current password
         if not check_password(old_password, request.user.password):
             return JsonResponse({'message': 'Incorrect old password.'}, status=400)
 
-        # Check if the new password contains spaces
         if ' ' in new_password:
             return JsonResponse({'message': 'New password cannot contain spaces.'}, status=400)
 
-        # Add additional password validation rules if needed
-        # For example, you can check for minimum length or complexity requirements
 
-        # Update the user's password
         request.user.set_password(new_password)
         request.user.save()
 
-        # Authenticate the user with the new password
         user = authenticate(username=request.user.username, password=new_password)
         if user is not None:
             login(request, user)
@@ -383,11 +410,8 @@ def coupon_action(request):
 
 
 def remove_coupon(request):
+    request.session['discounted_total'] = None
     return redirect('payment:BasketView')
-
-
-
-
 
 
 

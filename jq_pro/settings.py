@@ -71,14 +71,24 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
+   
 ]
 
+
 ROOT_URLCONF = 'jq_pro.urls'
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+MEDIA_URL = '/images/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR, 'templates'],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,7 +99,6 @@ TEMPLATES = [
                 'acount.context_processor.categories',
                 'basket.context_processors.basket',
                 'django.template.context_processors.request',
-              
             ],
         },
     },
@@ -201,6 +210,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+TIME_ZONE = 'UTC'
 
 # ci 51708528377-ec0pps4kfd8hhn1o9p5jhrbaphdfbmu9.apps.googleusercontent.com
 # cs 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
+

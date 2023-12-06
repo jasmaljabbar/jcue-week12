@@ -18,6 +18,10 @@ from acount.models import  Wallet,Wallet_History
 from admin_sid.forms import ReturnReasonForm
 from orders.models import Order, ReturnRequest
 
+
+
+
+
 def order_placed(request):
     return render(request, "payment/orderplaced.html")
 
@@ -28,11 +32,13 @@ def generate_order_key():
     order_key = f"ORDER-{timestamp}-{unique_id}"
     return order_key
 
-
 @login_required
 def BasketView(request):
     billing_address = Address.objects.filter(user=request.user)
     cart, created = Cart.objects.get_or_create(user=request.user)
+
+    wallet_balance = None
+    coupons = []
 
     try:
         wallet_balance = Wallet.objects.get(user=request.user)
@@ -40,8 +46,9 @@ def BasketView(request):
         coupons = Coupon.objects.filter(
             Q(coupon_type='public') &
             Q(expire_date__gte=timezone.now()) &
-            Q(min_purchase_amount__lte=cart.get_total_price())& 
-            ~Q(user=user))
+            (Q(min_purchase_amount__lte=cart.get_total_price()) | Q(min_purchase_amount__isnull=True)) &
+            ~Q(user=user)
+        )
     except Wallet.DoesNotExist:
         Wallet.objects.create(user=request.user, balance=0)
         wallet_balance = Wallet.objects.get(user=request.user)
@@ -55,7 +62,6 @@ def BasketView(request):
         state = request.POST.get("state", "")
         pincode = request.POST.get("pincode", "")
         addresses = Address.objects.all()
-    
 
         if addresses:
             try:
@@ -64,7 +70,6 @@ def BasketView(request):
                 active_address.save()
             except Address.DoesNotExist:
                 pass
-
 
         if request.user.is_authenticated:
             user = request.user
@@ -79,10 +84,13 @@ def BasketView(request):
                 flag=True,
             )
 
-    return render(request, "payment/address.html", {"billing_address": billing_address,
-                                                    "shipping_price": shipping_price,
-                                                    'wallet_balance': wallet_balance,
-                                                    "coupons": coupons,})
+    return render(request, "payment/address.html", {
+        "billing_address": billing_address,
+        "shipping_price": shipping_price,
+        "wallet_balance": wallet_balance,
+        "coupons": coupons,
+    })
+
 
 
 
@@ -108,7 +116,7 @@ def address(request):
             paymentmethod = request.POST.get("paymentMethod")
             total_paid = basket.get_total_price()
             order_key = generate_order_key()
-            discounted_total = None
+            discounted_total = None 
             discounted_total = request.session.get('discounted_total')
             coupon_code = request.session.get('coupon-code')
 
@@ -179,11 +187,11 @@ def address(request):
                     basket.clear()
                     return render(request, "payment/orderplaced.html")
                 except:
-                    # Handle exceptions related to the coupon code if needed
+                 
                     basket.clear()
                     return render(request, "payment/orderplaced.html")
             else:
-                # Handle other payment methods if needed
+               
                 return render(request, "payment/UPI.html", {"discounted_total": discounted_total,
                                                              "shipping_price": shipping_price})
         else:
@@ -197,10 +205,12 @@ def address(request):
 
 
 
+
 def upi_paypal_com(request):
     billing_address = get_object_or_404(Address, user=request.user, flag=True)
     cart, created = Cart.objects.get_or_create(user=request.user)
     shipping_price = cart.get_shipping_price()
+
     if request.method == "POST":
         basket = Basket(request)
 
@@ -208,24 +218,24 @@ def upi_paypal_com(request):
             body = json.loads(request.body)
             paymentmethod = body.get("paymentmethod")
             total_paid = basket.get_total_price()
-            order_key = generate_order_key()  
+            order_key = generate_order_key()
             discounted_total = request.session.get('discounted_total')
             coupon_code = request.session.get('coupon-code')
-            if discounted_total:  
+
+            if discounted_total:
                 total_paid = discounted_total
                 coupon = Coupon.objects.get(code=coupon_code)
 
             for item in basket:
                 product = item.product
-                if item.quantity > product.stock:  
-           
+                if item.quantity > product.stock:
                     return render(
                         request,
                         "payment/address.html",
                         {
                             "message": f"Insufficient stock for {product.title}",
                             "billing_address": billing_address,
-                            "shipping_price":shipping_price
+                            "shipping_price": shipping_price
                         },
                     )
 
@@ -243,31 +253,35 @@ def upi_paypal_com(request):
                 billing_status=paymentmethod,
             )
 
-    
             order_id = order.pk
 
             for item in basket:
                 OrderItem.objects.create(
                     order=order,
                     product=item.product,
-                    price=item.subtotal_price,  # Adjust this line based on your CartItem model
+                    price=item.subtotal_price(), 
                     quantity=item.quantity,
                 )
+
                 # Update product stock
                 product = item.product
                 product.stock -= item.quantity
                 product.best_sellers += item.quantity
                 product.save()
 
+            # Clear the basket (cart) outside the loop
+            basket.clear()
+
             request.session['coupon-code'] = coupon_code
             coupon = Coupon.objects.get(code=coupon_code)
             coupon.user = request.user
-            coupon.save()        
-            basket.clear()
+            coupon.save()
 
             return JsonResponse("Payment completed", safe=False)
 
     return JsonResponse("Invalid request", safe=False)
+
+
 
 
 
@@ -380,12 +394,13 @@ def order_cancel(request, order_id):
                 if order.discounted_total is None:
                     user_wallet.balance += order.total_paid
                 else:
+                    print('it not')
                     user_wallet.balance += order.discounted_total
                 wallet_history_entry = Wallet_History.objects.create(
-                    wallet=user_wallet,
-                    transaction_type='credit',  # Assuming it's a credit since it's a return
-                    amount=order.total_paid if order.discounted_total is None else order.discounted_total
-                )
+                wallet=user_wallet,
+                transaction_type='credit', 
+                amount=order.total_paid if order.discounted_total is None else order.discounted_total
+            )
                 user_wallet.save()
 
             product.save()

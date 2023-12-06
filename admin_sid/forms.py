@@ -1,7 +1,8 @@
 # forms.py in your user-side app
 from django.core.validators import MinValueValidator
 from django import forms
-from .models import Coupon,Category
+from .models import Coupon,Category,Banner
+from PIL import Image
 
 
 class CouponForm(forms.ModelForm):
@@ -54,13 +55,27 @@ class AdminReturnResponseForm(forms.Form):
 
 
 class AddBannerForm(forms.Form):
-    new_banner = forms.CharField(max_length=255, required=True)
-    link = forms.URLField(required=True)
-    img = forms.ImageField(required=True)
+    title = forms.CharField(label="Banner Title", max_length=100)
+    image = forms.ImageField(label="Banner Image")
+    link = forms.URLField(label="Banner Link", required=False)
+    crop_width = forms.IntegerField(label="Crop Width", required=False)
+    crop_height = forms.IntegerField(label="Crop Height", required=False)
 
 
-from django import forms
-from .models import Banner
+
+    def clean_cropped_image(self):
+        # Perform cropping if a new image is provided
+        cropped_image = self.cleaned_data.get('cropped_image')
+        if cropped_image:
+            image = Image.open(cropped_image)
+            # Perform cropping logic here
+            # For example, you can use the crop function
+            # image = image.crop((x, y, x + width, y + height))
+            # Save the cropped image
+            # image.save(cropped_image.path)
+        return cropped_image
+
+
 
 class EditBannerForm(forms.ModelForm):
     class Meta:
@@ -95,6 +110,9 @@ from django import forms
 from .models import Product
 
 class ProductForm(forms.ModelForm):
+    crop_width = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+    crop_height = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+
     class Meta:
         model = Product
         fields = ['title', 'description', 'category', 'brand', 'stock', 'price', 'old_price', 'image1', 'image2', 'image3', 'image4']
@@ -122,14 +140,10 @@ class ProductForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         stock = cleaned_data.get('stock')
-        price1 = cleaned_data.get('price1')
-        price2 = cleaned_data.get('price2')
+        price = cleaned_data.get('price')
 
         if stock is not None and stock < 0:
             self.add_error('stock', 'Stock cannot be negative.')
 
-        if price1 is not None and price1 < 0:
-            self.add_error('price1', 'Price 1 cannot be negative.')
-
-        if price2 is not None and price2 < 0:
-            self.add_error('price2', 'Price 2 cannot be negative.')
+        if price is not None and price < 0:
+            self.add_error('price', 'Price cannot be negative.')

@@ -35,6 +35,7 @@ from django.db import transaction
 from datetime import datetime, timedelta
 from .forms import AddBannerForm,CategoryForm,BrandForm,EditBrandForm,EditBannerForm,EditCategoryForm,ProductForm  
 from django.shortcuts import render, redirect
+from PIL import Image
 
 
  
@@ -188,27 +189,43 @@ def banner(request):
     banners= Banner.objects.all()
     return render(request,'admin/show_banner.html',{'banners':banners})
 
+
+
 def add_banner(request):
     if request.user.is_authenticated:
-        form = AddBannerForm()  
+        form = AddBannerForm()
         return render(request, "admin/add_banner.html", {'form': form})
     else:
         return redirect("home")
+
+
+
+from PIL import Image
 
 def add_banner_action(request):
     if request.method == "POST":
         form = AddBannerForm(request.POST, request.FILES)  
         if form.is_valid():
-            new_banner = form.cleaned_data["new_banner"]
+            title = form.cleaned_data["title"]
+            image = form.cleaned_data["image"]
             link = form.cleaned_data["link"]
-            img = form.cleaned_data["img"]
+            crop_width = form.cleaned_data["crop_width"]
+            crop_height = form.cleaned_data["crop_height"]
 
-            existing_banner = Banner.objects.filter(title=new_banner)
+            existing_banner = Banner.objects.filter(title=title)
             if existing_banner.exists():
                 messages.error(request, "Banner with this title already exists.")
             else:
-                banner = Banner(title=new_banner, image=img, link=link)
+                banner = Banner(title=title, image=image, link=link)
                 banner.save()
+
+                # Process image with cropping
+                if crop_width and crop_height:
+                    image_path = banner.image.path
+                    image = Image.open(image_path)
+                    cropped_image = image.crop((0, 0, crop_width, crop_height))
+                    cropped_image.save(image_path)
+
                 messages.success(request, "Banner added successfully.")
         else:
             for field, errors in form.errors.items():
@@ -216,6 +233,9 @@ def add_banner_action(request):
                     messages.error(request, f"{form.fields[field].label}: {error}")
 
     return redirect("banner")
+
+
+
 
 def banner_action(request,bid):
     banner = Banner.objects.get(id=bid)
@@ -275,6 +295,7 @@ def add_category(request):
     else:
         return redirect("home")
 
+
 def add_category_action(request):
     if request.method == "POST":
         form = CategoryForm(request.POST, request.FILES)
@@ -283,7 +304,8 @@ def add_category_action(request):
             new_category = form.cleaned_data['new_category']
             img = form.cleaned_data['img']
 
-            existing_category = Category.objects.filter(title=new_category)
+            # Check if a category with the same title already exists (case-insensitive)
+            existing_category = Category.objects.filter(title__iexact=new_category)
 
             if existing_category.exists():
                 messages.error(request, "Category already exists")
@@ -299,6 +321,7 @@ def add_category_action(request):
 
     return redirect("show_category")
 
+
 @never_cache
 def edit_category(request, cid):
     if request.user.is_authenticated:
@@ -307,6 +330,8 @@ def edit_category(request, cid):
         return render(request, "admin/edit_category.html", {"category": category, "form": form})
     else:
         return redirect("home")
+
+from django.contrib import messages
 
 def edt_category_action(request):
     if request.method == "POST":
@@ -317,9 +342,10 @@ def edt_category_action(request):
             new_category_name = form.cleaned_data['title']
             new_category_img = form.cleaned_data['image']
 
-            existing_category = Category.objects.all()
             
-            if new_category_name in existing_category:
+            existing_category = Category.objects.filter(title__iexact=new_category_name).exclude(id=category_id)
+
+            if existing_category.exists():
                 messages.error(request, "Category already exists")
                 return redirect("add_category")
 
@@ -337,6 +363,7 @@ def edt_category_action(request):
         form = EditCategoryForm()
 
     return render(request, "admin/edit_category.html", {'form': form})
+
 
 @never_cache
 def show_brand(request):
@@ -515,13 +542,28 @@ def handle_non_negative(value):
     except ValueError:
         return 0
 
-@never_cache
+
+
 def add_product(request):
     if request.user.is_authenticated:
         if request.method == 'POST':
             form = ProductForm(request.POST, request.FILES)
             if form.is_valid():
                 form.save()
+
+                # Process image with cropping
+                crop_width = form.cleaned_data.get('crop_width')
+                crop_height = form.cleaned_data.get('crop_height')
+
+                if crop_width and crop_height:
+                    product = Product.objects.latest('id')  # Adjust this based on your model's primary key
+                    for field in ['image1', 'image2', 'image3', 'image4']:
+                        image_field = getattr(product, field)
+                        if image_field:
+                            image = Image.open(image_field.path)
+                            cropped_image = image.crop((0, 0, crop_width, crop_height))
+                            cropped_image.save(image_field.path)
+
                 return redirect("show_product")
         else:
             form = ProductForm()
@@ -536,6 +578,7 @@ def add_product(request):
         return render(request, "admin/add_product.html", context)
     else:
         return redirect("home")
+
 
 @never_cache
 def show_user(request):
@@ -662,11 +705,12 @@ def add_category_offer(request):
                     percentage = Decimal(str(percentage))  # Convert to Decimal
                     product.price = product.price - (percentage / 100) * product.price
                 
+                product.has_offer = True
                 product.save()
 
         response_data = {'success': True, 'message': 'Category offer added successfully'}
     except ObjectDoesNotExist as e:
-        print(f"ObjectDoesNotExist: {e}")
+       
         response_data = {'success': False, 'message': 'Invalid category ID'}
     except IntegrityError:
         response_data = {'success': False, 'message': 'An offer for this category already exists'}
@@ -688,6 +732,7 @@ def delete_category_offer(request, offer_id):
                 product.price = product.old_price
                 product.old_price = product.discount_price
                 product.discount_price = 0
+                product.has_offer = False 
                 product.save()
 
         response_data = {'success': True, 'message': 'Category offer deleted successfully'}

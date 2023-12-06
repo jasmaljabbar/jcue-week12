@@ -37,6 +37,7 @@ class Product(models.Model):
     old_price = models.DecimalField(max_digits=99999, decimal_places=2)
     stock = models.IntegerField()
     best_sellers = models.IntegerField(default=0)
+    has_offer = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
@@ -127,8 +128,12 @@ class ProductOffer(models.Model):
     expire_date = models.DateTimeField()
 
     def is_valid_for_category(self):
-        time_now = timezone.now() + timedelta(hours=5, minutes=30)
+        time_now = timezone.now()
+        
         return self.start_date <= time_now <= self.expire_date
+
+
+
 
     # def calculate_discount(self, price):
     #     """

@@ -29,10 +29,7 @@ Shopping Cart
               d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
           </svg>
         </a>
-        <ul class="dropdown-menu" aria-labelledby="dropdownLink">
-          <li class="item small">Next day delivery</li>
-          <li class="item small">Premium delivery</li>
-        </ul>
+       
       </div>
     </div>
 
@@ -58,7 +55,7 @@ Shopping Cart
                     <button type="button" id="decrement-{{ cart_item.product.id }}"
                       data-index="{{ cart_item.product.id }}"
                       class="bg-secondary rounded hover:bg-gray-600 text-white font-semibold py-2 px-3 rounded-l-full decrement-button">-</button>
-                    <input id="select-{{ cart_item.product.id }}" type="number" class="p-2" style="max-width: 80px;"
+                    <input id="select-{{ cart_item.product.id }}" type="number" class="p-2" readonly style="max-width: 80px;"
                       min="1" step="1" value="{{ cart_item.quantity }}">
                     <button type="button" id="increment-{{ cart_item.product.id }}"
                       data-index="{{ cart_item.product.id }}"

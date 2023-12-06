@@ -67,7 +67,7 @@ Home
                     <th class="text-capitalize">₹ {{ vi_product.price }} <del>
                             {% if vi_product.old_price %}
                             <small>₹{{ vi_product.old_price }}</small></del></th>
-                            {% endif %}
+                    {% endif %}
                 </tr>
                 <tr>
                     <td>Availability</td>
@@ -85,7 +85,7 @@ Home
             <div class="my-5">
                 <button type="button" id="add-button" value="{{vi_product.id}}" class="btn btn-success fw500">Add to
                     Cart</button>
-                <a href="" class="btn btn-primary mx-2 px-2">Buy Now</a>
+
             </div>
         </div>
         {% endif %}

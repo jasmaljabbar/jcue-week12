@@ -1,4 +1,4 @@
-<!-- your_template.html -->
+<!-- add_banner.html -->
 {% extends "admin/admin_dsh.html" %}
 {% load crispy_forms_tags %}
 {% block main %}
@@ -9,12 +9,11 @@
         enctype="multipart/form-data">
         {% csrf_token %}
         {{ form|crispy }}
-        <div class="text-right">
+
+        <div class="text-right mt-3">
             <button type="submit" class="btn btn-success">Add Banner</button>
         </div>
     </form>
 </div>
 
 {% endblock main %}
-
-
