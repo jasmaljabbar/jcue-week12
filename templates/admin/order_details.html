@@ -6,7 +6,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Order Detail - Order ID: {{ order.id }}</h5>
+                    <h5 class="card-title text-center">Order Detail - Order ID: {{ orders.id }}</h5>
 
                     <p>Order Date: {{ orders.created }}</p>
                     <p>Total Amount: ₹{{ orders.total_paid }}</p>
@@ -14,7 +14,7 @@
                     <h6 class="mt-4">Customer Information:</h6>
                     <p>Customer Name: {{ orders.full_name }}</p>
                     <p>payment Method: {{ orders.billing_status }}</p>
-                    <!-- Add other customer information as needed -->
+                   
 
                     <h6 class="mt-4">Order Items:</h6>
                     <table class="table table-striped">
@@ -41,12 +41,15 @@
                         </tbody>
                     </table>
 
-                    <p>Status: <span class="{% if order.status == 'canceled' %}text-danger{% endif %}">{{orders.get_status_display}}</span></p>
-                        
-                            
+                    <p>Status: <span
+                            class="{% if order.status == 'canceled' %}text-danger{% endif %}">{{orders.get_status_display}}</span>
+                    </p>
 
-                    {% if order.status == 'confirmed' %}
-                    <form method="post" action="{% url 'payment:cancel_order' order.id %}">
+
+
+                    {% if orders.status == 'confirmed' %}
+
+                    <form method="post" action="{% url 'order_rejected' orders.id %}">
                         {% csrf_token %}
                         <input type="submit" id="cancel-order"
                             onclick="return confirm('Do you want to cancel this order?');" value="Reject Order"
@@ -54,9 +57,11 @@
                     </form>
                     {% elif order.status == 'canceled' %}
                     <p class="text-danger">This order has been canceled.</p>
+                    {% elif order.status == 'rejected' %}
+                    rejected
                     {% endif %}
 
-                    <!-- Check if there is a return request and display its status -->
+
                     {% if return_request %}
                     <h6 class="mt-4">Return Request Status:</h6>
                     <p>Return Request: {{ return_request.admin_response|default:"Pending" }}</p>
@@ -65,7 +70,7 @@
                         View User's Reason
                     </button>
 
-                    <!-- Modal for displaying user's reason -->
+
 
                     <div class="modal fade" id="viewReasonModal" tabindex="-1" role="dialog"
                         aria-labelledby="viewReasonModalLabel" aria-hidden="true">
@@ -89,7 +94,7 @@
 
                                     {% if return_request %}
                                     {% if not return_request.admin_response %}
-                                    <!-- Add Accept and Reject buttons -->
+
                                     <form method="post" action="{% url 'handle_return_request' return_request.id %}">
                                         {% csrf_token %}
                                         <button type="submit" name="response" value="accepted"

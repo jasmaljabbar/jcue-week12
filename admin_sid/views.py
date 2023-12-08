@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from .models import Category 
-from acount.models import  Wallet,Wallet_History
+from acount.models import  User_profile, Wallet,Wallet_History
 from django.http import HttpResponse
 from .models import Coupon,Banner, ProductOffer,Product
 from django.db import IntegrityError
@@ -66,7 +66,6 @@ def dashboard(request):
         total_orders_per_month.append(order["monthly_orders_count"])
         total_sales_per_month.append(order["monthly_sales"])
 
-    # Daily sales data
     current_month = timezone.now().month
     current_year = timezone.now().year
     orders_daily_report = (
@@ -198,6 +197,15 @@ def add_banner(request):
     else:
         return redirect("home")
 
+
+def user_message(request):
+    users_with_messages = User_profile.objects.exclude(message='')
+    return render(request, 'admin/user_message.html', {'users': users_with_messages})
+
+
+def view_message(request, user_id):
+    user = get_object_or_404(User_profile, id=user_id)
+    return render(request, 'admin/view_message.html', {'user': user})
 
 
 from PIL import Image
@@ -551,7 +559,7 @@ def add_product(request):
             if form.is_valid():
                 form.save()
 
-                # Process image with cropping
+               
                 crop_width = form.cleaned_data.get('crop_width')
                 crop_height = form.cleaned_data.get('crop_height')
 
@@ -593,7 +601,6 @@ def customeraction(request, uid):
         customer = User.objects.get(id=uid)
         if customer.is_active:
             customer.is_active = False
-            print(customer.is_active)
         else:
             customer.is_active = True
         customer.save()
@@ -639,11 +646,46 @@ def order(request):
         messages.success(request, "succesfully updated")
     return render(request, "admin/admin_order.html", {"orders": orders})
 
-# views.py
+
 def order_details(request, oid):
     orders = Order.objects.get(id=oid)
     return_request = ReturnRequest.objects.filter(order=orders).first()
     return render(request, "admin/order_details.html", {"orders": orders, 'return_request': return_request})
+
+
+def order_rejected(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    if request.method == "POST":
+        order_items = order.items.all()
+        
+        user_wallet = get_object_or_404(Wallet, user=order.user)
+        for order_item in order_items:
+            product = order_item.product
+            product.stock += order_item.quantity
+            product.best_sellers -= order_item.quantity
+            if order.billing_status != 'cod':
+                if order.discounted_total is None:
+                    user_wallet.balance += order.total_paid
+                else:
+                    print('it not')
+                    user_wallet.balance += order.discounted_total
+                wallet_history_entry = Wallet_History.objects.create(
+                wallet=user_wallet,
+                transaction_type='credit', 
+                amount=order.total_paid if order.discounted_total is None else order.discounted_total
+            )
+                user_wallet.save()
+
+            product.save()
+
+        order.status = "rejected"
+        order.save()
+
+        return render(request, "admin/order_details.html", {"order": order})
+
+    return render(request, "admin/order_details.html", {"order": order})
+
 
 def category_offer(request):
     category_data = Category.objects.all()
@@ -690,7 +732,7 @@ def add_category_offer(request):
             # Create the category offer
             offer.save()
 
-            # Update discount_price for all products in the category
+           
             products = Product.objects.filter(category=category)
             
             for product in products:
@@ -781,11 +823,11 @@ def edit_coupon(request, coupon_id):
     return render(request, 'admin/edit_coupon.html', {'form': form, 'coupon': coupon})
 
 def delete_coupon(request, coupon_id):
-    print("Inside delete_coupon view")  # Add this line for debugging
+    ("Inside delete_coupon view") 
     coupon = get_object_or_404(Coupon, id=coupon_id)
 
     if request.method == 'POST':
-        print("Handling POST request")  # Add this line for debugging
+        print("Handling POST request")
         coupon.delete()
         return redirect('manage_coupons')
 
@@ -800,27 +842,26 @@ def handle_return_request(request, request_id):
             return_request.admin_response = response
             return_request.save()
 
-            # Update the order status based on the admin response
+           
             order = return_request.order
             if response == 'accepted':
                 order.status = 'returned'
                 order.save()
 
-                # Update wallet balance if the return is accepted
+                
                 user_wallet = get_object_or_404(Wallet, user=order.user)
                 if order.discounted_total is None:
                     transaction_amount = order.total_paid
                 else:
                     transaction_amount = order.discounted_total
 
-                # Create a new Wallet_History entry
                 wallet_history_entry = Wallet_History.objects.create(
                     wallet=user_wallet,
-                    transaction_type='credit',  # Assuming it's a credit since it's a return
+                    transaction_type='credit',  
                     amount=transaction_amount
                 )
                 
-                # Update wallet balance
+                
                 user_wallet.balance += transaction_amount
                 user_wallet.save()
 

@@ -19,7 +19,7 @@
                         <select class="form-select" id="orderStatusFilter">
                             <option value="" selected>All</option>
                             {% for status, _ in orders.0.ORDER_STATUS_CHOICES %}
-                                <option value="{{ status }}">{{ status }}</option>
+                            <option value="{{ status }}">{{ status }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -38,32 +38,38 @@
                         </thead>
                         <tbody>
                             {% if orders %}
-                                {% for order in orders %}
-                                    <tr data-customer-name="{{ order.full_name }}" data-order-status="{{ order.status }}">
-                                        <td>{{ order.id }}</td>
-                                        <td>{{ order.full_name }}</td>
-                                        <td>
-                                            <form action="{% url 'order' %}" method="post">
-                                                {% csrf_token %}
-                                                <select name="status" id="status_{{ order.id }}">
-                                                    {% for status, _ in order.ORDER_STATUS_CHOICES %}
-                                                        <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                                <input type="hidden" name="orderId" value="{{ order.id }}">
-                                                <button type="submit">Update Status</button>
-                                            </form>
-                                        </td>
-                                        <td>{{ order.created }}</td>
-                                        <td>{{ order.billing_status }}</td>
-                                        <td>₹{{ order.total_paid }}</td>
-                                        <td><a class="btn btn-Primary" href="{% url 'order_details' order.id %}">View</a></td>
-                                    </tr>
-                                {% endfor %}
+                            {% for order in orders %}
+                            <tr data-customer-name="{{ order.full_name }}" data-order-status="{{ order.status }}">
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.full_name }}</td>
+                                <td>
+                                    {% if order.status == 'canceled' or order.status == 'rejected' %}
+                                    <p>canceled</p>
+                                    {% else %}
+                                    <form action="{% url 'order' %}" method="post">
+                                        {% csrf_token %}
+                                        <select name="status" id="status_{{ order.id }}">
+                                            {% for status, _ in order.ORDER_STATUS_CHOICES %}
+                                            <option value="{{ status }}" {% if order.status == status %} selected {% endif %}>
+                                                {{ status }} </option> 
+
+                                            {% endfor %}
+                                        </select>
+                                        <input type="hidden" name="orderId" value="{{ order.id }}">
+                                        <button type="submit">Update Status</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                                <td>{{ order.created }}</td>
+                                <td>{{ order.billing_status }}</td>
+                                <td>₹{{ order.total_paid }}</td>
+                                <td><a class="btn btn-Primary" href="{% url 'order_details' order.id %}">View</a></td>
+                            </tr>
+                            {% endfor %}
                             {% else %}
-                                <tr>
-                                    <td colspan="7">No orders found.</td>
-                                </tr>
+                            <tr>
+                                <td colspan="7">No orders found.</td>
+                            </tr>
                             {% endif %}
                         </tbody>
                     </table>
@@ -97,7 +103,7 @@
 
             // Show/hide the "No orders found" message based on the number of visible rows
             var visibleRows = $('tbody tr:visible').length;
-            
+
             if (visibleRows === 0) {
                 $('tbody tr.no-orders-message').show();
             } else {

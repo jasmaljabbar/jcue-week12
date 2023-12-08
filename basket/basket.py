@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from .models import CartItem, Cart
 
-# basket.py
+
 
 
 class Basket:
@@ -14,10 +14,10 @@ class Basket:
 
     def restore_session_data(self):
         if self.user.is_authenticated:
-            print(f"User: {self.user}")
+          
             cart, created = Cart.objects.get_or_create(user=self.user)
             self.user.cart = cart  # Associate the Cart instance with the user
-            print(f"User Cart: {self.user.cart}")
+           
 
     
     def clear(self):
@@ -31,15 +31,14 @@ class Basket:
         product_id = str(product.id)
         if self.user.is_authenticated:
             self.user.cart.add_item_to_db(product, qty)
-            print(f"Item added to user's cart: {product} - Qty: {qty}")
+            
         else:
             if product_id in self.basket:
                 self.basket[product_id]["qty"] += qty
             else:
                 self.basket[product_id] = {"price": str(product.price), "qty": qty}
             self.save()
-            print(f"Item added to session basket: {product} - Qty: {qty}")
-
+            
 
     def update(self, product, qty):
         product_id = str(product.id)

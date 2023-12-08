@@ -17,3 +17,8 @@ class UserProfileForm(forms.ModelForm):
             raise forms.ValidationError('Invalid phone number format. Please enter a 10-digit number without spaces.')
 
         return phone_number
+
+
+class CouponApplyForm(forms.Form):
+    coupon_code = forms.CharField(max_length=30)
+

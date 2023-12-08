@@ -21,15 +21,15 @@ def basket_summary(request):
 
     cart = Cart.objects.get(user=request.user)
 
-    # Calculate subtotal and shipping price
+   
     cart_total = cart.get_total_price()
     subtotal = cart.get_subtotal_price()
     shipping_price = cart.get_shipping_price()
     
-    # Calculate the total by adding subtotal and shipping price
+   
     total = subtotal + shipping_price
 
-    # Pass data to the template
+    
     context = {
         'cart': cart,
         'cart_total': cart_total,
@@ -123,13 +123,13 @@ def add_to_wishlist(request, id):
 
 @login_required
 def wishlist(request):
-    basket = Basket
+   
     product = Product.objects.all()
     wish_items = WishItem.objects.filter(user=request.user)
     context = {
         "wish_items": wish_items,
         "product": product,
-        "basket": basket,
+        
     }
     return render(request, "basket/wishlist.html", context)
 

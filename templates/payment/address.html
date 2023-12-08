@@ -9,7 +9,7 @@ User Address
 
 <div class="container shadow p-3 mb-5 bg-white rounded">
   <div class="row">
-
+    <div id="messageContainer"></div>
     <div class="col-md-8">
       <h2>Your Addresses</h2>
 
@@ -121,12 +121,12 @@ User Address
               {% endfor %}
             </tbody>
           </table>
-          <p>Subtotal: ${{ basket.get_subtotal_price }}</p>
+          <p>Subtotal: ₹{{ basket.get_subtotal_price }}</p>
           <p>Shipping Price: ${{ shipping_price }}</p>
-          <p>Total: ${{ basket.get_total_price }}</p>
-          {% if discounted_total %}
-          <p>Discounted Total: ${{ discounted_total }}</p>
-          {% endif %}
+          <p>Total: ₹{{ basket.get_total_price }}</p>
+
+          <p id="discountedTotal">Discounted Total: ₹{{ discounted_total }}</p>
+
           <!-- Payment method radio buttons -->
 
           {% if billing_address %}
@@ -149,20 +149,18 @@ User Address
             <br>
             <button type="submit" class="btn btn-primary btn-block">Place Order</button>
           </form>
-          <!-- Coupon input field -->
+
           {% else %}
-          <button type="submit" onclick="selectAddress()" class="btn btn-primary btn-block">Place Order</button>
+          <button type="button" onclick="selectAddress()" class="btn btn-primary btn-block">Place Order</button>
           <br>
           {% endif %}
 
-          <!-- Place Order button -->
-          <!-- Add this form to your checkout page -->
           <br>
 
           <h2></h2>
 
 
-          <form method="post" action="{% url 'coupon_action' %}">
+          <form id="couponForm">
             {% csrf_token %}
             <div class="input-group mb-3">
               <input type="text" class="form-control" name="coupon_code" placeholder="Coupon Code"
@@ -186,59 +184,110 @@ User Address
               {% if coupons %}
               {% for coupon in coupons %}
               <div class="dropdown-item">
-                {{ coupon.code }} - {{ coupon.discount_value }}% off
+                {% if coupon.discount_type|lower == "fixed" %}
+                {{ coupon.code }} - RS {{ coupon.discount_value }} off
+                {% else %}
+                {{ coupon.code }} - {{ coupon.discount_value }} % off
+                {% endif %}
+
               </div>
               {% endfor %}
               {% else %}
               <span class="dropdown-item text-muted">No coupons available</span>
               {% endif %}
             </div>
-          </div>
 
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-<script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script type="text/javascript" src="{% static 'checkout.js' %}"></script>
+  <script>
 
 
-
-
-  function selectAddress() {
-
-    console.log('{% url "payment:address" %}');
-
-    $.ajax({
-      url: '{% url "payment:address" %}',
-      method: 'GET',  // Update the method to POST
-      success: function (response) {
-        console.log(response)
-        if (response) {
-          console.log(response.success)
-          Toastify({
-            text: response.error_data.detail,
-            duration: 2500,
-            close: true,
-            gravity: "top",
-            position: "center",
-            style: {
-              background: "red",
-              borderRadius: "5px"  // Fix the syntax error here
-            },
-            onClick: function () { }
-          }).showToast();
-
+    function selectAddress() {
+     
+      $.ajax({
+        url: '{% url "payment:address" %}',
+        method: 'GET',
+        success: function (response) {
+          console.log(response);
+          if (response) {
+            console.log(response.success);
+            const errorMessage = response.error_data.error
+                ? response.error_data.error
+                : response.error_data.detail;
+            Toastify({
+              text:  errorMessage,
+              duration: 2500,
+              close: true,
+              gravity: "top",
+              position: "center",
+              style: {
+                background: "red",
+                borderRadius: "5px"
+              },
+              onClick: function () { }
+            }).showToast();
+          }
+        },
+        error: function (errorResponse) {
+          console.error(errorResponse);
         }
-      },
-      error: function (errorResponse) {
-        console.error(errorResponse);
-      }
+      });
+    }
+
+    $(document).on('submit', '#couponForm', function (e) {
+      e.preventDefault();
+      $.ajax({
+        url: '{% url "coupon_action" %}',
+        method: 'POST',
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+        data: $(this).serialize(),
+        success: function (response) {
+          if (response.success) {
+
+            $("#discountedTotal").text(`Discounted Total: $${response.discounted_total}`);
+            Toastify({
+              text: response.message,
+              duration: 2500,
+              close: true,
+              gravity: "top",
+              position: "center",
+              style: {
+                background: "green",
+                borderRadius: "5px"
+              },
+              onClick: function () { }
+            }).showToast();
+          } else {
+
+            Toastify({
+              text: response.message,
+              duration: 2500,
+              close: true,
+              gravity: "top",
+              position: "center",
+              style: {
+                background: "red",
+                borderRadius: "5px"
+              },
+              onClick: function () { }
+            }).showToast();
+          }
+        },
+        error: function (errorResponse) {
+          alert('please enter a valid value')
+          console.error(errorResponse);
+        }
+      });
     });
-  }
-
-</script>
 
 
-{% endblock %}
+  </script>
+
+
+
+  {% endblock %}

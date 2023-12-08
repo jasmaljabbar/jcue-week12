@@ -215,10 +215,9 @@ Home
   </div>
   {% endfor %}
 </div>
-<!-- ... (previous code) ... -->
 
 
-<!-- Display Top 4 Best Sellers -->
+
 <div class="container p-5">
 
   <div class="row">
@@ -281,11 +280,9 @@ Home
     {% if p.active %}
     <div class="col-md-3 col-sm-6 mb-4">
       <div class="product-card">
-        <!-- {% if p.has_offer %}
-        <div class="badge">Offer!</div>
-        {% else %}
-        <div class="badge">No Offer</div>
-        {% endif %} -->
+        {% if p.has_offer %}
+        <div class="badge">{{ p.offer_value }}% off</div>
+        {% endif %}
         <div class="product-img">
           {% if p.id in user_wishlist %}
           <a href="{% url 'basket:add_to_wishlist' p.id %}">

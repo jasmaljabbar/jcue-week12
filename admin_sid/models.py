@@ -38,6 +38,7 @@ class Product(models.Model):
     stock = models.IntegerField()
     best_sellers = models.IntegerField(default=0)
     has_offer = models.BooleanField(default=False)
+    offer_value = models.IntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -71,7 +72,9 @@ class Coupon(models.Model):
     min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def is_valid_for_user(self, user, total_paid):
-        return self.is_valid(total_paid) and user not in self.user.all()
+        if self.user is None:
+            return self.is_valid(total_paid)
+        return self.is_valid(total_paid) and user != self.user
     
     
     def save(self, *args, **kwargs):
@@ -98,11 +101,11 @@ class Coupon(models.Model):
         Calculate the discount amount based on the coupon type and value.
         """
         if self.discount_type == self.PERCENTAGE:
-            return (self.discount_value / 100) * total_amount
+            return (self.discount_value  / 100) * total_amount
         elif self.discount_type == self.FIXED:
-            return min(self.discount_value, total_amount)
+            return min(self.discount_value  , total_amount)
         else:
-            return 0  # No discount if the type is not recognized
+            return 0 
 
 
     def __str__(self):
@@ -123,7 +126,7 @@ class ProductOffer(models.Model):
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default=FIXED)
-    discount_value = models.DecimalField(max_digits=5, decimal_places=2)
+    discount_value = models.IntegerField()
     start_date = models.DateTimeField(default=timezone.now, blank=True)
     expire_date = models.DateTimeField()
 

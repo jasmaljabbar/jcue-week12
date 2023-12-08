@@ -4,11 +4,11 @@ from django.contrib.auth.models import User
 
 class User_profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
-    name= models.CharField(max_length=50)
+    name = models.CharField(max_length=50, default='UserName')
     profil_photo = models.ImageField(upload_to="profile_photos/")
-    phone_number = models.CharField( max_length=13,)
+    phone_number = models.CharField(max_length=13)
     address = models.CharField(max_length=100)
-
+    message = models.CharField(max_length=255, default="")
 
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

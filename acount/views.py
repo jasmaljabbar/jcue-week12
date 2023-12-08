@@ -18,8 +18,8 @@ from admin_sid.models import *
 from basket.models import Cart, CartItem , WishItem
 from .models import Wallet, Wallet_History
 from django.http import JsonResponse
-from .forms import UserProfileForm
-
+from .forms import UserProfileForm, CouponApplyForm
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.hashers import check_password
 
 
@@ -38,7 +38,7 @@ def home(request):
     for p in product:
         try:
             category_offers = ProductOffer.objects.filter(category=p.category)
-
+           
             if category_offers.exists():
                 category_offer = category_offers.first()
 
@@ -46,13 +46,16 @@ def home(request):
                     p.price = p.old_price
                     p.old_price = p.discount_price
                     p.discount_price = 0
-                    p.has_offer = True
+                    p.has_offer = False
                     p.save()
                 else:
-                    p.has_offer = False
+                     
+                    p.offer_value = category_offer.discount_value
+                    p.has_offer = True
                     p.save()
             else:
                 p.has_offer = False
+                p.offer_value = 0
                 p.save()
 
             print(f"Product {p.id} has_offer: {p.has_offer}")
@@ -67,26 +70,29 @@ def home(request):
         'best_sellers': best_sellers,
         'user_basket': user_basket,
         'user_wishlist': user_wishlist,
+        
     })
 
 
 def about_us(request):
     return render(request, "app/about_us.html")
 
+
+
+@login_required
 def contact_us(request):
+    user_profile = User_profile.objects.get(user=request.user)
+
     if request.method == 'POST':
         name = request.POST.get('name')
         email = request.POST.get('email')
         message = request.POST.get('message')
-
+        user_profile.message = message
+        user_profile.save()
 
        
-        print(f"Name: {name}, Email: {email}, Message: {message}")
 
-        
-        return render(request, "app/thank_you.html")
-
-    return render(request, "app/contact_us.html")
+    return render(request, "app/contact_us.html", {'user_profile': user_profile})
 
 
 def sign_up(request):
@@ -376,37 +382,62 @@ def coupon(request):
                                                     'user_is':user})
 
 
+@csrf_exempt
 def coupon_action(request):
     billing_address = Address.objects.filter(user=request.user)
+
     if request.method == 'POST':
-        coupon_code = request.POST.get("coupon_code")
-        user = request.user
-        cart, created = Cart.objects.get_or_create(user=user)
-        total_paid = cart.get_total_price()
-        shipping_price = cart.get_shipping_price()
-        try:
-            coupon = Coupon.objects.get(code=coupon_code)
-            coupons = Coupon.objects.filter(Q(coupon_type='public') &
-                                            Q(expire_date__gte=timezone.now()) &
-                                            Q(min_purchase_amount__lte=cart.get_total_price()) & 
-                                            ~Q(user=request.user))
-            request.session['coupon-code'] = coupon_code
-        except Coupon.DoesNotExist:
-            return render(request, "payment/address.html", {"message": "Invalid coupon code"}, status=400)
+        form = CouponApplyForm(request.POST)
 
+        if form.is_valid():
+            coupon_code = form.cleaned_data['coupon_code']
+            
+            user = request.user
+            cart, created = Cart.objects.get_or_create(user=user)
+            total_paid = cart.get_total_price()
+            shipping_price = cart.get_shipping_price()
 
-        if coupon.is_valid(total_paid) and not coupon.flag:
-            discount = coupon.calculate_discount(total_paid)
-            discounted_total = total_paid - discount
-            request.session['discounted_total'] = float(discounted_total)
-            coupon.save()  
+            try:
+                coupon = Coupon.objects.get(code=coupon_code)
+                coupons = Coupon.objects.filter(
+                    Q(coupon_type='public') &
+                    Q(expire_date__gte=timezone.now()) &
+                    Q(min_purchase_amount__lte=total_paid) &
+                    ~Q(user=request.user)
+                )
+                request.session['coupon-code'] = coupon_code
+            except Coupon.DoesNotExist:
+                return JsonResponse({"success": False, "message": "Invalid coupon code"}, status=400)
 
+            if coupon.is_valid(total_paid) and not coupon.flag:
 
-            return render(request, "payment/address.html", {"discounted_total": discounted_total,"billing_address":billing_address,'coupons':coupons,"shipping_price": shipping_price,})
+                if not coupon.is_valid_for_user(request.user, total_paid):
+                    return JsonResponse({"success": False, "message": "Coupon is already used by the user"}, status=400)
+
+                discount = coupon.calculate_discount(total_paid)
+                discounted_total = total_paid - discount
+            
+                request.session['discounted_total'] = float(discounted_total)
+                coupon.save()
+
+                response_data = {
+                    "success": True,
+                    "message": f"Coupon applied successfully. {coupon.discount_value}% discount applied.",
+                    "discounted_total": discounted_total,
+                }
+
+                return JsonResponse(response_data)
+            else:
+                print(f"Invalid coupon details: {coupon.code}, {coupon.is_valid(total_paid)}, {coupon.flag}")
+                return JsonResponse({"success": False, "message": "Coupon is not valid for this purchase"}, status=400)
         else:
-            return render(request, "payment/address.html", {"message": "Coupon is not valid for this purchase","billing_address":billing_address}, status=400)
-
-    return render(request, "payment/address.html", {"message": "Invalid request method","billing_address":billing_address}, status=400)
+           
+            print(form.errors.as_data())
+      
+            errors = {field: form.errors[field][0] for field in form.errors}
+            return JsonResponse({"error": "Invalid form submission", "errors": errors}, status=400)
+    else:
+        return JsonResponse({"error": "Invalid request method"}, status=400)
 
 
 def remove_coupon(request):
@@ -417,6 +448,12 @@ def remove_coupon(request):
 
 
 # ------------------------------forgot_password-----------
+def forgot_password(request):
+    id = request.session.get("id")
+    print("User ID from session:", id)
+    return render(request, "app/forgetpassword.html")
+
+
 
 
 def forget_password_action(request):
@@ -427,6 +464,7 @@ def forget_password_action(request):
         if user:
             request.session["id"] = user.pk
             request.session["mail"] = email
+           
             send_otp(request)
             return redirect("for_otp")
         else:
@@ -472,10 +510,6 @@ def forget_otp(request):
     return redirect("for_otp")
 
 
-def forgot_password(request):
-    id = request.session.get("id")
-    print("User ID from session:", id)
-    return render(request, "app/forgetpassword.html")
 
 
 
@@ -483,15 +517,17 @@ def new_password(request):
     if request.method == "POST":
         password_1 = request.POST.get("password_1")
         password_2 = request.POST.get("password_2")
-
         if password_1 == password_2:
             email = request.session.get("mail")
             user = User.objects.get(email=email)
-            hashed_password = make_password(password_1)
-            user.password = hashed_password
-            user.save()
+            
 
-            # Clear the session
+            
+            user.set_password(password_1)
+            user.save()
+          
+
+            
             request.session.clear()
 
             return redirect("user_login")

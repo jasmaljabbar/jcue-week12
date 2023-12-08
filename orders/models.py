@@ -2,6 +2,9 @@ from django.db import models
 from decimal import Decimal
 from django.conf import settings
 from admin_sid.models import Product
+from timezone_field import TimeZoneField
+from datetime import timedelta
+from django.utils import timezone
 
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='order_user', null=True, blank=True)
@@ -11,7 +14,8 @@ class Order(models.Model):
     city = models.CharField(max_length=100, null=True, blank=True)
     phone = models.CharField(max_length=100, null=True, blank=True)
     post_code = models.CharField(max_length=20, null=True, blank=True)
-    created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created = models.DateTimeField(null=True, blank=True)
+    user_timezone = TimeZoneField(default='UTC') 
     updated = models.DateTimeField(auto_now=True, null=True, blank=True)
     total_paid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     discounted_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -46,6 +50,10 @@ class Order(models.Model):
             return latest_order.status
         return None
 
+    def save(self, *args, **kwargs):
+        # Update the created field to the current time plus 5 and a half hours
+        self.created = timezone.now() + timedelta(hours=5, minutes=30)
+        super().save(*args, **kwargs)
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order,

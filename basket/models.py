@@ -27,11 +27,11 @@ class Cart(models.Model):
 
     def get_subtotal_price(self):
         subtotal = sum(item.subtotal_price() for item in self.items.all())
-        print(f"Calculated subtotal: {subtotal}")
+       
         return subtotal
 
     def get_shipping_price(self):
-        # Convert the shipping price to Decimal
+       
         return Decimal('11.5')
 
     def print_cart_items(self):
@@ -40,7 +40,6 @@ class Cart(models.Model):
                 f"Product: {item.product.title}, Quantity: {item.quantity}, Price: {item.product.price}, Subtotal: {item.subtotal_price}"
             )
 
-    # Inside the Cart model
     def add_item_to_db(self, product, qty):
         cart_item, created = CartItem.objects.get_or_create(
             user=self.user, product=product, defaults={"quantity": qty}
@@ -50,7 +49,7 @@ class Cart(models.Model):
             cart_item.quantity += qty
             cart_item.save()
 
-        self.items.add(cart_item)  # Add the cart item to the items relationship
+        self.items.add(cart_item) 
 
     def update_item_in_db(self, product, qty):
         cart_item = CartItem.objects.get(user=self.user, product=product)
@@ -62,7 +61,7 @@ class Cart(models.Model):
 
     
     def clear_cart_in_db(self):
-        # Assuming you have a related manager called 'items'
+    
         self.items.all().delete()
 
     def save_to_db(self):

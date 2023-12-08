@@ -6,6 +6,10 @@ Wishlist
 
 {% block main-content %}
 <style>
+    body {
+        overflow-x: hidden;
+    }
+
     .cart-wrap {
         padding: 40px 0;
         font-family: 'Open Sans', sans-serif;
@@ -218,19 +222,16 @@ Wishlist
                                     <button type="button" class="round-black-btn small-btn add-to-cart-button"
                                         data-productid="{{ item.product.id }}">Add to Cart
                                     </button>
-                                    <!-- Debug statement -->
                                 </td>
                                 {% else %}
                                 <td width="15%">
                                     <a href="{% url 'basket:basket_summary' %}">
                                         <button type="button" class="round-black-btn small-btn">Go to Cart</button>
                                     </a>
-                                    <!-- Debug statement -->
                                 </td>
                                 {% endif %}
                                 {% else %}
                                 <td width="15%"><span class="in-stock-box">Out of Stock</span></td>
-                                <td width="15%"> <!-- Display a message or placeholder for out-of-stock items --> </td>
                                 {% endif %}
                                 <td width="10%" class="text-center">
                                     <a href="{% url 'basket:remove_from_wishlist' item.id %}" class="trash-icon"><i
@@ -272,7 +273,7 @@ Wishlist
                     document.getElementById("basket-qty").innerHTML = json.qty;
                 },
                 error: function (xhr, errmsg, err) {
-                    // Handle error if needed
+
                 }
             });
         });

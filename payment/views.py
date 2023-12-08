@@ -7,7 +7,7 @@ from payment.models import Address
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 import uuid
 from django.db.models import Q
 from datetime import datetime
@@ -28,7 +28,7 @@ def order_placed(request):
 
 def generate_order_key():
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    unique_id = str(uuid.uuid4().hex)[:6]  # Use the first 6 characters of a UUID
+    unique_id = str(uuid.uuid4().hex)[:6]  
     order_key = f"ORDER-{timestamp}-{unique_id}"
     return order_key
 
@@ -98,13 +98,15 @@ def BasketView(request):
 def address(request):
     try:
         billing_address = Address.objects.get(user=request.user, flag=True)
+
     except Address.DoesNotExist:
-    # If billing address does not exist, handle it as needed
+        
         error_data = {
             'error': 'No billing address found.',
             'detail': 'Please add a billing address.'
         }
-        return JsonResponse({'success': True,'error_data' : error_data})
+        return JsonResponse({'success': True, 'error_data': error_data})
+      
 
     cart, created = Cart.objects.get_or_create(user=request.user)
     shipping_price = cart.get_shipping_price()
@@ -116,15 +118,14 @@ def address(request):
             paymentmethod = request.POST.get("paymentMethod")
             total_paid = basket.get_total_price()
             order_key = generate_order_key()
-            discounted_total = None 
             discounted_total = request.session.get('discounted_total')
             coupon_code = request.session.get('coupon-code')
 
-            if discounted_total:  
-                total_paid = discounted_total 
+            if discounted_total:
+                total_paid = discounted_total
                 coupon = Coupon.objects.get(code=coupon_code)
 
-            for item in basket.items.all():  # Corrected line
+            for item in basket:  
                 product = item.product
                 if item.quantity > product.stock:
                     basket.clear()
@@ -138,6 +139,7 @@ def address(request):
                             "shipping_price": shipping_price
                         },
                     )
+
 
             if paymentmethod == "cod" or paymentmethod == "wallet":
                 if paymentmethod == "wallet":
@@ -168,7 +170,7 @@ def address(request):
 
                 order_id = order.pk
 
-                for item in basket.items.all():  # Corrected line
+                for item in basket.items.all():  
                     OrderItem.objects.create(
                         order=order,
                         product=item.product,
@@ -222,24 +224,32 @@ def upi_paypal_com(request):
             discounted_total = request.session.get('discounted_total')
             coupon_code = request.session.get('coupon-code')
 
-            if discounted_total:
+            coupon = None
+            if discounted_total and coupon_code:
+                try:
+                    coupon = Coupon.objects.get(code=coupon_code)
+                except Coupon.DoesNotExist:
+                    coupon = None
+                    return HttpResponse("Coupon does not exist", status=400)
+                    
+
+            if coupon:
                 total_paid = discounted_total
-                coupon = Coupon.objects.get(code=coupon_code)
 
-            for item in basket:
-                product = item.product
-                if item.quantity > product.stock:
-                    return render(
-                        request,
-                        "payment/address.html",
-                        {
-                            "message": f"Insufficient stock for {product.title}",
-                            "billing_address": billing_address,
-                            "shipping_price": shipping_price
-                        },
-                    )
+                for item in basket:  
+                    product = item.product
+                    if item.quantity > product.stock:
+                        return render(
+                            request,
+                            "payment/address.html",
+                            {
+                                "message": f"Insufficient stock for {product.title}",
+                                "billing_address": billing_address,
+                                "shipping_price": shipping_price
+                            },
+                        )
 
-            # Create the order
+
             order = Order.objects.create(
                 user=request.user,
                 full_name=billing_address.full_name,
@@ -263,20 +273,19 @@ def upi_paypal_com(request):
                     quantity=item.quantity,
                 )
 
-                # Update product stock
                 product = item.product
                 product.stock -= item.quantity
                 product.best_sellers += item.quantity
                 product.save()
 
-            # Clear the basket (cart) outside the loop
+   
             basket.clear()
 
             request.session['coupon-code'] = coupon_code
-            coupon = Coupon.objects.get(code=coupon_code)
-            coupon.user = request.user
-            coupon.save()
-
+            if coupon:
+                coupon.user = request.user
+                coupon.save()
+               
             return JsonResponse("Payment completed", safe=False)
 
     return JsonResponse("Invalid request", safe=False)
@@ -334,13 +343,13 @@ def edit_product_action(request):
             address.city = state
             address.post_code = pincode
 
-            # Save the updated product
+           
             address.save()
             billing_address = Address.objects.filter(user=request.user)
             return render(
                 request, "payment/address.html", {"billing_address": billing_address}
             )
-            # return HttpResponseRedirect(request.META['HTTP_REFERER'])
+           
         else:
             return redirect("address")
     else:
@@ -394,7 +403,7 @@ def order_cancel(request, order_id):
                 if order.discounted_total is None:
                     user_wallet.balance += order.total_paid
                 else:
-                    print('it not')
+                  
                     user_wallet.balance += order.discounted_total
                 wallet_history_entry = Wallet_History.objects.create(
                 wallet=user_wallet,
