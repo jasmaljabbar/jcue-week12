@@ -9,7 +9,7 @@ def send_otp(request):
     request.session['otp_key'] = totp.secret
     otp_valid = datetime.now() + timedelta(minutes=1)
     request.session['otp_valid'] = str(otp_valid)
-    print(f"otp: {otp}")
+    
 
     mail = request.session['mail']
     subject = 'Verify your account'

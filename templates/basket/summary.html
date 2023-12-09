@@ -181,9 +181,7 @@ Shopping Cart
               action: 'post',
             },
             success: function (json) {
-              console.log("AJAX Response:", json);
               window.location.reload();
-              console.log(json);
               if (json.qty <= json.productStock) {
                 document.getElementById('basket-qty').innerHTML = json.qty;
                 document.getElementById('subtotal').innerHTML = json.subtotal;

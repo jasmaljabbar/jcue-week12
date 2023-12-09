@@ -54,11 +54,8 @@ var postCode = document.getElementById("postCode").value;
         }
       }).then(function(result) {
         if (result.error) {
-          console.log('payment error')
-          console.log(result.error.message);
         } else {
           if (result.paymentIntent.status === 'succeeded') {
-            console.log('payment processed')
             
             window.location.replace("http://127.0.0.1:8000/payment/orderplaced/");
           }

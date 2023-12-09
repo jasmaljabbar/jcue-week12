@@ -37,7 +37,6 @@ def basket_summary(request):
         'shipping_price': shipping_price,
         'total': total,
     }
-    print('the subtotal is',subtotal)
     return render(request, "basket/summary.html", context)
 
 

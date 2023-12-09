@@ -668,7 +668,6 @@ def order_rejected(request, order_id):
                 if order.discounted_total is None:
                     user_wallet.balance += order.total_paid
                 else:
-                    print('it not')
                     user_wallet.balance += order.discounted_total
                 wallet_history_entry = Wallet_History.objects.create(
                 wallet=user_wallet,
@@ -816,7 +815,6 @@ def edit_coupon(request, coupon_id):
             messages.success(request, 'Coupon edited successfully')
             return redirect('manage_coupons')
         else:
-            print(form.errors)
             messages.error(request, 'Error editing coupon. Please correct the errors.')
             return redirect('manage_coupons')
 
@@ -827,7 +825,6 @@ def delete_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
 
     if request.method == 'POST':
-        print("Handling POST request")
         coupon.delete()
         return redirect('manage_coupons')
 

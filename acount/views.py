@@ -58,7 +58,7 @@ def home(request):
                 p.offer_value = 0
                 p.save()
 
-            print(f"Product {p.id} has_offer: {p.has_offer}")
+           
         except ProductOffer.DoesNotExist:
             p.has_offer = False
             p.save()
@@ -149,7 +149,6 @@ def otp_perform(request):
         otp_valid = request.session.get("otp_valid")
         if otp_key and otp_valid is not None:
             valid_otp = datetime.fromisoformat(otp_valid)
-            print(otp_valid)
             if valid_otp > datetime.now():
                 totp = pyotp.TOTP(otp_key, interval=60)
                 if totp.verify(otp):
@@ -428,11 +427,9 @@ def coupon_action(request):
 
                 return JsonResponse(response_data)
             else:
-                print(f"Invalid coupon details: {coupon.code}, {coupon.is_valid(total_paid)}, {coupon.flag}")
                 return JsonResponse({"success": False, "message": "Coupon is not valid for this purchase"}, status=400)
         else:
            
-            print(form.errors.as_data())
       
             errors = {field: form.errors[field][0] for field in form.errors}
             return JsonResponse({"error": "Invalid form submission", "errors": errors}, status=400)
@@ -450,7 +447,6 @@ def remove_coupon(request):
 # ------------------------------forgot_password-----------
 def forgot_password(request):
     id = request.session.get("id")
-    print("User ID from session:", id)
     return render(request, "app/forgetpassword.html")
 
 
@@ -484,16 +480,11 @@ def forget_otp(request):
         otp_key = request.session.get("otp_key")
         otp_valid = request.session.get("otp_valid")
 
-        print("Entered OTP:", otp)
-        print("Stored OTP Key:", otp_key)
-        print("Stored OTP Validity:", otp_valid)
-
         if otp_key and otp_valid is not None:
             valid_otp = datetime.fromisoformat(otp_valid)
             if valid_otp > datetime.now():
                 totp = pyotp.TOTP(otp_key, interval=60)
                 if totp.verify(otp):
-                    print("OTP Verified Successfully!")
                     return redirect("new_password")
                 else:
                     messages.error(request, "Invalid Otp")
