@@ -1,7 +1,7 @@
-# forms.py in your user-side app
+
 from django.core.validators import MinValueValidator
 from django import forms
-from .models import Coupon,Category,Banner
+from .models import Coupon,Category,Banner,Product
 from PIL import Image
 
 
@@ -85,7 +85,7 @@ class EditBannerForm(forms.ModelForm):
 
 
 class CategoryForm(forms.Form):
-    new_category = forms.CharField(max_length=255, required=True)
+    new_category = forms.CharField(max_length=255, min_length=1, required=True)
     img = forms.ImageField(required=True)
 
 
@@ -102,12 +102,7 @@ class BrandForm(forms.Form):
 class EditBrandForm(forms.Form):
     edit_brand = forms.CharField(label='Edit Brand', max_length=100, required=True)
 
-# forms.py
 
-
-# forms.py
-from django import forms
-from .models import Product
 
 class ProductForm(forms.ModelForm):
     crop_width = forms.IntegerField(widget=forms.HiddenInput(), required=False)

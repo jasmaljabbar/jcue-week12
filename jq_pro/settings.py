@@ -112,8 +112,12 @@ WSGI_APPLICATION = 'jq_pro.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'jcue',
+        'USER': 'mysuperuser',
+        'PASSWORD': 'mysuperuser',
+        'HOST': 'jcue.cd6ylradvnsp.eu-north-1.rds.amazonaws.com',
+        'PORT': '5432',
     }
 }
 
@@ -215,3 +219,12 @@ TIME_ZONE = 'UTC'
 # ci 51708528377-ec0pps4kfd8hhn1o9p5jhrbaphdfbmu9.apps.googleusercontent.com
 # cs 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
 
+AWS_ACCESS_KEY_ID = 'AKIA6FRHQRQDHZCCNO42'
+AWS_SECRET_ACCESS_KEY = '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'
+AWS_STORAGE_BUCKET_NAME = 'jcueshope'
+AWS_S3_SIGNATURE_NAME = 's3v4',
+AWS_S3_REGION_NAME = 'us-east-1'
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL =  None
+AWS_S3_VERITY = True
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
