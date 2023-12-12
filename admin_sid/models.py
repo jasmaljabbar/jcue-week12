@@ -32,7 +32,7 @@ class Product(models.Model):
     image4 = models.ImageField(upload_to='prodents', null=True)
     active = models.BooleanField(default=True)
     description = models.TextField()
-    discount_price = models.DecimalField(max_digits=99999, decimal_places=2, default=0)
+    discount_price =models.DecimalField(max_digits=10, decimal_places=2,default=0)
     price = models.DecimalField(decimal_places=2, max_digits=12) 
     old_price = models.DecimalField(decimal_places=2, max_digits=12)
     stock = models.IntegerField()
@@ -138,16 +138,7 @@ class ProductOffer(models.Model):
 
 
 
-    # def calculate_discount(self, price):
-    #     """
-    #     Calculate the discount amount based on the offer type and value.
-    #     """
-    #     if self.discount_type == self.PERCENTAGE:
-    #         return (self.discount_value / 100) * price
-    #     elif self.discount_type == self.FIXED:
-    #         return min(self.discount_value, total_amount)
-    #     else:
-    #         return 0  # No discount if the type is not recognized
+
 
     def __str__(self):
         return f"{self.category} Offer"
