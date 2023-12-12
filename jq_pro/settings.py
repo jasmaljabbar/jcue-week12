@@ -113,10 +113,10 @@ WSGI_APPLICATION = 'jq_pro.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'jcue',
+        'NAME': 'jcueshope',
         'USER': 'mysuperuser',
         'PASSWORD': 'mysuperuser',
-        'HOST': 'jcue.cd6ylradvnsp.eu-north-1.rds.amazonaws.com',
+        'HOST': 'jcueshope.cbgcildtb2ve.us-east-1.rds.amazonaws.com',
         'PORT': '5432',
     }
 }
@@ -219,8 +219,8 @@ TIME_ZONE = 'UTC'
 # ci 51708528377-ec0pps4kfd8hhn1o9p5jhrbaphdfbmu9.apps.googleusercontent.com
 # cs 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
 
-AWS_ACCESS_KEY_ID = 'AKIA6FRHQRQDHZCCNO42'
-AWS_SECRET_ACCESS_KEY = '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'
+AWS_ACCESS_KEY_ID = 'AKIA6FRHQRQDN5OXPACR'
+AWS_SECRET_ACCESS_KEY = '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'
 AWS_STORAGE_BUCKET_NAME = 'jcueshope'
 AWS_S3_SIGNATURE_NAME = 's3v4',
 AWS_S3_REGION_NAME = 'us-east-1'
