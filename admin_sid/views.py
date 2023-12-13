@@ -267,25 +267,28 @@ def edt_banner_action(request):
         form = EditBannerForm(request.POST, request.FILES)
 
         if form.is_valid():
-            banner_id = request.POST.get("brand_id")
-            new_banner_name = form.cleaned_data['title']
-            new_banner_link = form.cleaned_data['link']
-            new_banner_img = form.cleaned_data['image']
+            banner_id = request.POST.get("brand_id", None)
             
-            
-            
-            banner = Banner.objects.get(id=banner_id)  # Fix the variable name
-            banner.title = new_banner_name
-            banner.link = new_banner_link
-            banner.image= new_banner_img
-            banner.save()
-            return redirect("banner")
+            if banner_id is not None and banner_id.isdigit():
+                banner_id = int(banner_id)
+                
+                new_banner_name = form.cleaned_data['title']
+                new_banner_link = form.cleaned_data['link']
+                new_banner_img = form.cleaned_data['image']
 
+                banner = get_object_or_404(Banner, id=banner_id) 
+                banner.title = new_banner_name
+                banner.link = new_banner_link
+                banner.image = new_banner_img
+                banner.save()
+
+                return redirect("banner")
 
     else:
         form = EditBannerForm()
 
     return render(request, "admin/edit_banner.html", {'form': form})
+
 
 @never_cache
 def show_category(request):

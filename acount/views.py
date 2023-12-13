@@ -81,19 +81,23 @@ def about_us(request):
 
 @login_required
 def contact_us(request):
-    user_profile = User_profile.objects.get(user=request.user)
+    user_profile = None  # Initialize outside the try block
+
+    try:
+        user_profile = User_profile.objects.get(user=request.user)
+    except User_profile.DoesNotExist:
+        pass
 
     if request.method == 'POST':
         name = request.POST.get('name')
         email = request.POST.get('email')
         message = request.POST.get('message')
-        user_profile.message = message
-        user_profile.save()
 
-       
+        if user_profile:  # Check if user_profile is not None
+            user_profile.message = message
+            user_profile.save()
 
     return render(request, "app/contact_us.html", {'user_profile': user_profile})
-
 
 def sign_up(request):
     if request.user.is_authenticated:

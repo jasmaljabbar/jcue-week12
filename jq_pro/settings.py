@@ -190,7 +190,7 @@ EMAIL_HOST_PASSWORD = 'lcpx hcyb naxq fbub'
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    # Add other backends as needed
+  
 
 
 ]

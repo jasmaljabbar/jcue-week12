@@ -3,8 +3,8 @@
 {% load static %}
 
 {% block title %}
-    Order History
-{% endblock title %} 
+Order History
+{% endblock title %}
 
 {% block main-content %}
 <div class="container mt-5">
@@ -23,20 +23,24 @@
                         </thead>
                         <tbody>
                             {% if orders %}
-                                {% for order in orders %}
-                                    <tr>
-                                        <td><a href="{% url 'payment:order_detail' order.id %}">{{ forloop.counter }}</a></td>
-                                        <td>{{ order.created }}</td>
-                                        <td>₹{{ order.total_paid }}</td>
-                                    </tr>
-                                {% endfor %}
+                            {% for order in orders %}
+                            <tr>
+
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ order.created }}</td>
+                                <td>₹{{ order.total_paid }}</td>
+                                <td><a class="btn btn-success" href="{% url 'payment:order_detail' order.id %}">view</a></td>
+                            </tr>
+                            {% endfor %}
                             {% else %}
-                                <tr>
-                                    <td colspan="4">No orders yet.</td>
-                                </tr>
+                            <tr>
+                                <td colspan="3">No orders yet.</td>
+                            </tr>
                             {% endif %}
                         </tbody>
                     </table>
+
+
                 </div>
             </div>
         </div>

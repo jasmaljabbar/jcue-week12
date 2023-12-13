@@ -277,6 +277,7 @@ def upi_paypal_com(request):
                 product.stock -= item.quantity
                 product.best_sellers += item.quantity
                 product.save()
+                request.session['discounted_total'] = 0
 
    
             basket.clear()

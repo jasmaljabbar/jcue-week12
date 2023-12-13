@@ -16,7 +16,7 @@ class Basket:
         if self.user.is_authenticated:
           
             cart, created = Cart.objects.get_or_create(user=self.user)
-            self.user.cart = cart  # Associate the Cart instance with the user
+            self.user.cart = cart 
            
 
     
@@ -92,11 +92,11 @@ class Basket:
     
     @property
     def items(self):
-        # Assuming CartItem is the model representing items in the basket
+      
         if self.user:
             return CartItem.objects.filter(user=self.user)
         else:
-            # Handle the case where the basket is not associated with a user
+        
             return []
 
     def __len__(self):
