@@ -445,8 +445,11 @@ def remove_coupon(request):
     request.session['discounted_total'] = None
     return redirect('payment:BasketView')
 
+def error_404(request, exception):
+    return render(request, 'app/404.html', status=404)
 
-
+def error_500(request, *args, **kwargs):
+    return render(request, 'app/500.html', status=500)
 
 # ------------------------------forgot_password-----------
 def forgot_password(request):

@@ -34,6 +34,7 @@ def generate_order_key():
 
 @login_required
 def BasketView(request):
+    request.session['discounted_total'] = 0
     billing_address = Address.objects.filter(user=request.user)
     cart, created = Cart.objects.get_or_create(user=request.user)
 
@@ -277,7 +278,7 @@ def upi_paypal_com(request):
                 product.stock -= item.quantity
                 product.best_sellers += item.quantity
                 product.save()
-                request.session['discounted_total'] = 0
+                
 
    
             basket.clear()
